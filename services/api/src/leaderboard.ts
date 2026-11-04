@@ -87,10 +87,11 @@ export interface StatsRow {
 /// A desk wallet's address never leaves the API: its row carries this label instead.
 export const DESK_LABEL = "desk";
 
-export function entriesFromRows(rows: readonly StatsRow[], offset: number, sampleWallets: ReadonlySet<string>): BoardEntry[] {
+/// `mask` hides desk wallets behind a label; the synthetic board has no real wallets to hide.
+export function entriesFromRows(rows: readonly StatsRow[], offset: number, sampleWallets: ReadonlySet<string>, mask = true): BoardEntry[] {
   return rows.map((row, index) => ({
     rank: offset + index + 1,
-    wallet: sampleWallets.has(row.wallet) ? `${DESK_LABEL}-${index + offset + 1}` : row.wallet,
+    wallet: mask && sampleWallets.has(row.wallet) ? `${DESK_LABEL}-${index + offset + 1}` : row.wallet,
     realisedPnl: row.realisedPnl,
     unrealisedPnl: row.unrealisedPnl,
     totalPnl: row.totalPnl,
@@ -171,7 +172,7 @@ function fixtureRow(fixture: Fixture): StatsRow {
 export function syntheticBoard(query: BoardQuery, settlementDecimals: number): BoardResponse {
   const rows = FIXTURES.map(fixtureRow).sort(compareRows(query.metric));
   const page = rows.slice(query.offset, query.offset + query.limit);
-  const entries = entriesFromRows(page, query.offset, new Set(page.map((row) => row.wallet)));
+  const entries = entriesFromRows(page, query.offset, new Set(page.map((row) => row.wallet)), false);
   return {
     metric: query.metric,
     window: query.window,

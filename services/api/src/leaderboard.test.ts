@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { privateKeyToAccount } from "viem/accounts";
 import {
   buildPnlCard,
+  entriesFromRows,
   compareRows,
   parseBoardQuery,
   parseVisibilityBody,
@@ -231,4 +232,15 @@ test("added margin enlarges the ROI denominator, and a sample wallet marks the c
   );
   assert.equal(card.sample, true);
   assert.equal(card.roiBps, ((usd(500) * 10_000n) / usd(2_000)).toString());
+});
+
+test("a desk wallet never leaves the API: its row carries a label, other wallets are untouched", () => {
+  const desk = "0x00000000000000000000000000000000000000d1";
+  const other = "0x00000000000000000000000000000000000000a2";
+  const row = (wallet: string) => ({ wallet, realisedPnl: "1", unrealisedPnl: "0", totalPnl: "1", roiBps: "1", volume: "10", tradeCount: 1, winRateBps: null });
+  const entries = entriesFromRows([row(desk), row(other)], 0, new Set([desk]));
+  assert.equal(entries[0]!.wallet, "desk-1");
+  assert.equal(entries[0]!.sample, true);
+  assert.equal(entries[1]!.wallet, other);
+  assert.ok(!JSON.stringify(entries).includes(desk.slice(2)));
 });
