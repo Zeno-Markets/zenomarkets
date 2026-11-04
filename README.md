@@ -58,6 +58,8 @@ record. Changes move `main` -> `testnet` -> `mainnet`. CI builds every branch.
 
 - Contracts (testnet): `bash scripts/testnet-deploy.sh` (dry run), then `--broadcast`. Verify with
   `NETWORK_NAME=robinhood_testnet bash packages/contracts/script/verify.sh`.
+- Check every testnet contract live (chain + Blockscout): `pnpm testnet:verify` (menu), `--all` to skip the
+  menu, `--fast` to skip the animation.
 - Services and web: `bash deploy/vps-setup.sh testnet` once on the VPS, then `bash deploy/vps-deploy.sh testnet`.
 
 ## License

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Zeno — derivatives for tokenized equities.",
+  "description": "Zeno \u2014 derivatives for tokenized equities.",
   "engines": {
     "node": ">=20",
     "pnpm": ">=9"
@@ -17,7 +17,8 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "testnet:verify": "node scripts/testnet-verify.mjs"
   },
   "dependencies": {
     "tsx": "^4.19.0"
