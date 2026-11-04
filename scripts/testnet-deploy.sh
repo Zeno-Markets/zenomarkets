@@ -6,6 +6,7 @@
 #   3  markets: stocks, ETFs, crypto, commodities, opened at today's real price (Yahoo Finance)
 #   4  credit stack: TSLA / USDG lending pair, open
 #   5  pool: the deployer funds the trading pool
+#   6  the signing key goes to the VPS env for the keeper and the pricing service
 # Without --broadcast: a dry run of step 2 against the live testnet, nothing sent.
 # With --broadcast: asks the keystore password once (kept in a private temp file, deleted on exit), checks the
 # address, sends every step, then records the addresses in packages/config (scripts/record-deployment.mjs).
@@ -58,7 +59,8 @@ price_wei() {
 
 if [ "${1:-}" != "--broadcast" ]; then
   echo "Dry run of DeployAll against the live testnet; nothing is sent."
-  COLLATERAL_TOKEN=0x000000000000000000000000000000000000dEaD forge script script/DeployAll.s.sol:DeployAll --rpc-url "$RPC" --sender "$DEPLOYER" | tail -25
+  # Any live 6-or-18-decimal ERC-20 serves for the simulation; the broadcast deploys its own USDG first.
+  COLLATERAL_TOKEN=0x70b0FDa35dEb7BA710C601Ed9c45b9F992027112 forge script script/DeployAll.s.sol:DeployAll --rpc-url "$RPC" --sender "$DEPLOYER" | tail -25
   echo "Prices the markets would open at:"
   for row in "${MARKETS[@]}"; do IFS='|' read -r s _ <<<"$row"; printf '  %-5s %s\n' "$s" "$(cast from-wei "$(price_wei "$s")")"; done
   exit 0
@@ -121,4 +123,14 @@ done
 AMOUNT="$POOL_USDG" forge script script/FundPool.s.sol:FundPool "${COMMON[@]}" | grep "Pool balance" || true
 
 cd "$ROOT" && node scripts/record-deployment.mjs robinhood_testnet
+
+# The keeper (testnet price feeds, orders) and the pricing service (option quotes) sign as the deployer. Its key goes
+# straight from the keystore into the VPS's root-only env file over SSH; it is never printed or written locally.
+if [ "${REHEARSAL:-}" != 1 ] && [ "${SKIP_VPS_KEY:-}" != 1 ]; then
+  echo "6/6  signing key -> VPS (/opt/zeno/testnet/zeno.env)"
+  key="$(CAST_UNSAFE_PASSWORD="$(cat "$PW")" cast wallet decrypt-keystore -k "$(dirname "$KEYSTORE")" "$(basename "$KEYSTORE")" | grep -oE '0x[0-9a-fA-F]{64}')"
+  printf 'KEEPER_PRIVATE_KEY=%s\nQUOTER_PRIVATE_KEY=%s\n' "$key" "$key" |
+    ssh root@160.238.36.55 'f=/opt/zeno/testnet/zeno.env; sed -i "/^KEEPER_PRIVATE_KEY=/d;/^QUOTER_PRIVATE_KEY=/d" "$f"; cat >>"$f"; chmod 600 "$f"'
+  unset key
+fi
 echo "done. Spent: $(cast from-wei "$(node -e "console.log((BigInt('$balance') - BigInt('$(cast balance "$DEPLOYER" --rpc-url "$RPC")')).toString())")") ETH"
