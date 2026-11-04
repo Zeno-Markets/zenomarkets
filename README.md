@@ -14,7 +14,7 @@ Stocks, ETFs, crypto and commodities. Perps, options, lending and borrowing on R
 | --- | --- | --- |
 | Perpetuals | Long or short up to 10x; market, limit, stop-loss, take-profit; isolated and cross margin; RFQ block trades | `ZenoPerpsEngine`, `ZenoPerpPositionManager`, `ZenoPerpOrderManager`, `ZenoFundingManager`, `ZenoLiquidationEngine`, `ZenoRFQManager` |
 | Options | Cash-settled calls and puts, option chain with Greeks, strategy builder | `ZenoOptionsEngine`, `ZenoOptionMarket`, `ZenoOptionPositionManager` |
-| Lending & borrowing | Borrow USDG against tokenized stocks; supply USDG to an ERC-4626 vault | `ZenoCreditPair`, `ZenoCreditVault`, `ZenoCreditRegistry`, `ZenoCreditRouter`, `ZenoCompositeSanityOracle` |
+| Lending & borrowing | Borrow USDG against tokenized stocks, repay any time | `ZenoCreditPair`, `ZenoCreditVault`, `ZenoCreditRegistry`, `ZenoCreditRouter`, `ZenoCompositeSanityOracle` |
 | Accounts | One vault, subaccounts, cross margin, copy trading | `ZenoVault`, `ZenoCollateralManager`, `ZenoSubaccountFactory`, `ZenoCrossMarginManager` |
 | Risk & prices | Market registry, risk caps, oracle routing and validation, insurance fund, fees and buyback | `ZenoMarketRegistry`, `ZenoRiskManager`, `ZenoOracleRouter`, `ZenoPriceValidator`, `ZenoInsuranceFund`, `ZenoFeeManager`, `ZenoBuybackModule` |
 

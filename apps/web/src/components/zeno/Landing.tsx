@@ -375,8 +375,8 @@ function Products({ markets }: { markets: CardMarket[] }) {
           Borrow against your stocks. <span className="font-pixel">Don&apos;t sell them.</span>
         </>
       ),
-      copy: "Lock tokenized shares as collateral and draw USDG at a fixed loan-to-value limit, or supply USDG to the vault and earn what borrowers pay.",
-      points: ["Stock-backed USDG loans", "ERC-4626 lending vault", "Oracle with staleness and jump checks", "Repay any time"],
+      copy: "Lock tokenized shares as collateral and draw USDG up to a fixed loan-to-value limit. Interest accrues per block, and the shares stay yours the whole time.",
+      points: ["Stock-backed USDG loans", "Deposit and borrow in one transaction", "Oracle with staleness and jump checks", "Repay any time"],
       href: "/lending",
       widget: lend ? <LendingWidget symbol={lend.market.symbol} price={lend.price} /> : null,
     },

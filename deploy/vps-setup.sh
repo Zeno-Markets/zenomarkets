@@ -91,7 +91,7 @@ User=zeno
 EnvironmentFile=/opt/zeno/%i/web.env
 Environment=NODE_ENV=production
 WorkingDirectory=/opt/zeno/%i/repo/apps/web
-ExecStart=/opt/zeno/%i/repo/node_modules/.bin/next start -H ${WEB_HOST} -p ${WEB_PORT}
+ExecStart=/opt/zeno/%i/repo/apps/web/node_modules/.bin/next start -H ${WEB_HOST} -p ${WEB_PORT}
 Restart=always
 RestartSec=10
 MemoryMax=700M
