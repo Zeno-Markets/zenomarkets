@@ -228,7 +228,7 @@ export function OptionTicket() {
       <div className="flex flex-col gap-3 p-3">
         <div>
           <p className="text-xs text-muted">Series</p>
-          <p className="mt-1 font-medium">{selection ? plainSeries(selection.symbol, selection.type, selection.strike, selection.expiry) : "–"}</p>
+          <p className="mt-1 font-medium">{selection ? plainSeries(selection.symbol, selection.type, selection.strike, selection.expiry) : <span className="text-muted">Pick an ask in the chain</span>}</p>
           {selection ? <p className="mt-0.5 text-xs text-faint">{codeOf(selection)}</p> : null}
         </div>
 

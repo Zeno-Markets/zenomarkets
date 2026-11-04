@@ -99,7 +99,7 @@ export function VaultControls() {
                 value={amount}
                 onValueChange={setAmount}
                 suffix="USD"
-                placeholder="0.00"
+                placeholder="100"
                 invalid={tooMuch}
                 hint={tooMuch ? "More than you have" : undefined}
               />

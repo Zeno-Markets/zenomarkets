@@ -27,6 +27,7 @@ import { fmtBps, fmtUsd } from "@/lib/format";
 import { fmtDateTime } from "@/lib/options";
 import { useTerminal } from "@/stores/terminal";
 import { PerpPositionsTable } from "./PositionsTable";
+import { NONE } from "./None";
 
 const W = 1000;
 const H = 140;
@@ -78,8 +79,8 @@ function FundingHistory() {
     <div className="flex flex-col gap-3 p-3">
       <dl className="flex flex-wrap gap-x-10 gap-y-2">
         <Stat label="Current rate">{fmtBps(market?.funding.currentFundingRateBps)}</Stat>
-        <Stat label={`Average, last ${bars.length} intervals`}>{average === undefined ? "–" : fmtPercent(average)}</Stat>
-        <Stat label="Interval">{market ? `${Number(market.funding.fundingIntervalSeconds) / 3600}h` : "–"}</Stat>
+        <Stat label={`Average, last ${bars.length} intervals`}>{average === undefined ? NONE : fmtPercent(average)}</Stat>
+        <Stat label="Interval">{market ? `${Number(market.funding.fundingIntervalSeconds) / 3600}h` : NONE}</Stat>
       </dl>
       {bars.length === 0 ? (
         <p className="text-muted">No funding has been applied yet. The first rate is recorded after one interval with an open position.</p>
@@ -135,8 +136,8 @@ function OpenInterestAnalytics() {
           <Stat label="Short">
             <Num tone="down">{fmtUsd(now?.short, decimals, 0)}</Num>
           </Stat>
-          <Stat label="Long share">{share === undefined ? "–" : `${share}%`}</Stat>
-          <Stat label="Cap used">{used === undefined ? "–" : `${(used / 100).toFixed(2)}% of ${fmtUsd(now?.cap, decimals, 0)}`}</Stat>
+          <Stat label="Long share">{share === undefined ? NONE : `${share}%`}</Stat>
+          <Stat label="Cap used">{used === undefined ? NONE : `${(used / 100).toFixed(2)}% of ${fmtUsd(now?.cap, decimals, 0)}`}</Stat>
         </dl>
         {env.apiUrl && !isError ? (
           <div className="ml-auto w-44">

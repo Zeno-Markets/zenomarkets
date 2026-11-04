@@ -12,6 +12,7 @@ import { groupTabs, inGroup, symbolOf, tradeBlocker, type GroupTab } from "@/lib
 import { groupForSymbol } from "@zeno/config";
 import { useTerminal } from "@/stores/terminal";
 import { Change, fmtChange, useStatsFor } from "./Change";
+import { NONE } from "./None";
 
 /// Enough markets that finding one by eye is slower than typing part of its name.
 const FILTER_FROM = 6;
@@ -45,10 +46,10 @@ function MarketRow({ symbol }: { symbol: string }) {
           ) : null}
         </span>
         <Num tone={closed ? "muted" : undefined} title={closed ? "Market closed: last close" : undefined}>
-          {data ? fmtPrice(data.markPrice) : isPending ? <Skeleton className="w-12" /> : closed ? close.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "–"}
+          {data ? fmtPrice(data.markPrice) : isPending ? <Skeleton className="w-12" /> : closed ? close.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : NONE}
         </Num>
         <Num tone="muted" className="text-xs" title="Funding rate">
-          {fmtBps(data?.funding.currentFundingRateBps)}
+          {data?.funding.currentFundingRateBps ? fmtBps(data.funding.currentFundingRateBps) : `${config?.maxLeverage ?? ""}${config ? "x max" : ""}`}
         </Num>
         {closed && close.changeBps !== null ? <Num tone={toneOf(close.changeBps)} className="text-xs">{fmtChange(close.changeBps)}</Num> : <Change stats={stats} className="text-xs" />}
       </button>

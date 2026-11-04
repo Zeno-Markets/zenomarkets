@@ -8,6 +8,7 @@ import { LISTED_CONTRACTS } from "@/lib/contracts";
 import { env } from "@/lib/env";
 import { MONO } from "@/lib/frame";
 import { REGISTRY_ERROR } from "@/lib/market";
+import { NONE } from "./None";
 
 const label = "text-[11px] font-medium uppercase tracking-[0.2em] text-faint";
 const value = cn(MONO, "text-base text-text");
@@ -23,7 +24,7 @@ export function TrustStrip({ className, stacked = false }: { className?: string;
       <div>
         <dt className={label}>Markets listed</dt>
         <dd className={value} title={markets.isError ? REGISTRY_ERROR : undefined}>
-          {markets.isPending ? <Skeleton className="w-8" /> : markets.isError ? "–" : markets.data.length}
+          {markets.isPending ? <Skeleton className="w-8" /> : markets.isError ? NONE : markets.data.length}
         </dd>
       </div>
       <div>

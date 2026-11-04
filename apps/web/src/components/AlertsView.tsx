@@ -18,6 +18,7 @@ import { hasPushSubscription, pushSupport, subscribeMessage, subscribeThisBrowse
 import { ConnectButton } from "./ConnectButton";
 import { OnMainnet } from "./NetworkText";
 import { PanelState } from "./PanelState";
+import { NONE } from "./None";
 
 type Mode = "reach" | "up" | "down";
 
@@ -403,7 +404,7 @@ function Lists({ wallet }: { wallet: string }) {
               <li key={alert.id} className="border-t border-line px-3 py-3 first:border-t-0">
                 <p className="font-medium">{alertLabel(alert.symbol, alert.kind, alert.target, alert.basePrice)}</p>
                 <p className="text-xs text-muted">
-                  Fired at {alert.triggerPrice ? fmtAlertPrice(alert.triggerPrice) : "–"}, {alert.triggeredAt ? timeAgo(alert.triggeredAt) : ""}.
+                  Fired at {alert.triggerPrice ? fmtAlertPrice(alert.triggerPrice) : NONE}, {alert.triggeredAt ? timeAgo(alert.triggeredAt) : ""}.
                 </p>
               </li>
             ))}

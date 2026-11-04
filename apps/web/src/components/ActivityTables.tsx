@@ -11,6 +11,7 @@ import { fmt, fmtPrice, fmtSigned, shortHash, signTone } from "@/lib/format";
 import { perpLabel } from "@/lib/market";
 import { fmtDateTime } from "@/lib/options";
 import { zenoRead } from "@/lib/zeno";
+import { NONE } from "./None";
 
 export const head = "px-3 py-2 text-right text-xs font-normal text-muted first:text-left";
 export const cell = "px-3 py-2 text-right tabular-nums first:text-left";
@@ -131,7 +132,7 @@ function details(event: HistoryEvent, decimals: number): string {
   if (args.pnl) parts.push(`PnL ${fmtSigned(BigInt(args.pnl), decimals)}`);
   if (args.triggerPrice) parts.push(`${TRIGGER_KINDS[args.kind ?? ""] ?? "Trigger"} at $${fmtPrice(BigInt(args.triggerPrice))}`);
   if (args.executionPrice) parts.push(`Filled at $${fmtPrice(BigInt(args.executionPrice))}`);
-  return parts.join(", ") || "–";
+  return parts.join(", ") || "Recorded on chain";
 }
 
 export function HistoryTable() {
@@ -181,7 +182,7 @@ export function HistoryTable() {
                 ) : null}
               </span>
             </td>
-            <td className={cell}>{event.blockNumber || "–"}</td>
+            <td className={cell}>{event.blockNumber || NONE}</td>
             <TxCell hash={event.txHash} />
           </tr>
         ))}

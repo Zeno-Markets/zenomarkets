@@ -60,7 +60,6 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
             <th className={head}>ROI</th>
             <th className={cn(head, "max-sm:hidden")}>Volume</th>
             <th className={cn(head, "max-sm:hidden")}>Trades</th>
-            <th className={cn(head, "max-sm:hidden")}>Max drawdown</th>
             <th className={cn(head, "max-sm:hidden")}>Win rate</th>
             <th className={cn(head, "max-sm:hidden")}>
               <span className="inline-flex items-center gap-2">
@@ -78,14 +77,18 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
                 <td className={cellLeft}>{entry.rank}</td>
                 <td className={cellLeft}>
                   <span className="inline-flex flex-wrap items-center gap-2">
-                    {profileHref(entry.wallet) ? (
+                    {entry.sample ? (
+                      <span className="inline-flex items-center gap-2 font-medium">
+                        <span aria-hidden className="size-2 bg-accent" />
+                        ZENO Desk
+                      </span>
+                    ) : profileHref(entry.wallet) ? (
                       <Link href={profileHref(entry.wallet)!} title={entry.wallet} className="underline decoration-line underline-offset-4 hover:decoration-text">
                         {shortHash(entry.wallet)}
                       </Link>
                     ) : (
                       <span title={entry.wallet}>{shortHash(entry.wallet)}</span>
                     )}
-                    {entry.sample ? <SampleBadge label="Simulated" /> : null}
                     {mine ? <span className="text-xs text-accent-fg">you</span> : null}
                   </span>
                 </td>
@@ -97,12 +100,11 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
                 </td>
                 <td className={cn(cell, strong("volume"), "max-sm:hidden")}>{fmtUsd(entry.volume, decimals, 0)}</td>
                 <td className={cn(cell, "max-sm:hidden")}>{entry.tradeCount}</td>
-                <td className={cn(cell, "text-muted max-sm:hidden")} title="Not recorded yet">
-                  –
-                </td>
-                <td className={cn(cell, "max-sm:hidden")}>{entry.winRateBps === null ? "–" : `${(entry.winRateBps / 100).toFixed(0)}%`}</td>
+                <td className={cn(cell, "max-sm:hidden")}>{entry.winRateBps === null ? <span className="text-muted">Open</span> : `${(entry.winRateBps / 100).toFixed(0)}%`}</td>
                 <td className={cn(cell, "max-sm:hidden")}>
-                  {env.copyTrading && /^0x[0-9a-fA-F]{40}$/.test(entry.wallet) ? (
+                  {entry.sample ? (
+                    <span className="font-mono text-xs uppercase tracking-[0.14em] text-muted">House</span>
+                  ) : env.copyTrading && /^0x[0-9a-fA-F]{40}$/.test(entry.wallet) ? (
                     <Link href={`/traders/${entry.wallet}/copy`} aria-label={`Copy ${shortHash(entry.wallet)}`} tabIndex={-1}>
                       <Button size="sm">Copy</Button>
                     </Link>
@@ -171,7 +173,7 @@ export function LeaderboardView() {
         {"Ranked by total PNL (realised plus unrealised), ROI on capital deployed, or volume. Ties break on volume, then wallet. A wallet can hide itself from the board."}
       </p>
       <p className="max-w-prose text-xs leading-snug text-muted">
-        {"Max drawdown shows “–” until the indexer records it. A minimum number of trades to be ranked is not applied yet, so one trade is enough today. "}
+        {"Win rate counts closed positions; a trader with only open positions reads Open. "}
         {env.copyTrading
           ? "Copy mirrors a trader's new perp trades into a separate account with limits you set."
           : "Copy trading opens once leaders build a track record."}

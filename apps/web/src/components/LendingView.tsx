@@ -19,6 +19,7 @@ import { ConnectButton } from "./ConnectButton";
 import { CreditTicket } from "./CreditTicket";
 import { Term } from "./Term";
 import { TicketModeToggle } from "./TicketModeToggle";
+import { NONE } from "./None";
 
 /// The band as words and a rule, never colour alone: the label says it and the bar below carries it too.
 const bandTone: Record<HealthBand, "neutral" | "up" | "down" | "muted"> = { none: "muted", safe: "up", watch: "neutral", danger: "down", liquidatable: "down" };
@@ -181,7 +182,7 @@ function CreditHistory({ symbol, collateralDecimals, debtDecimals }: { symbol: s
             <tbody>
               {rows.map((row) => (
                 <tr key={`${row.txHash}-${row.kind}-${row.amount}`} className="border-t border-line">
-                  <td className={cell}>{row.timestamp ? fmtDateTime(new Date(row.timestamp * 1000).toISOString()) : "–"}</td>
+                  <td className={cell}>{row.timestamp ? fmtDateTime(new Date(row.timestamp * 1000).toISOString()) : NONE}</td>
                   <td className={cell}>{historyLabel[row.kind]}</td>
                   <td className={cell}>
                     <Num>{amountOf(row)}</Num>

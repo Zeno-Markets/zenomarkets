@@ -41,7 +41,7 @@ export function TraderProfile({ wallet }: { wallet: string }) {
             ["ROI", fmtSignedBps(entry.roiBps)],
             ["Volume", fmtUsd(entry.volume, decimals, 0)],
             ["Trades", String(entry.tradeCount)],
-            ["Win rate", entry.winRateBps === null ? "–" : `${(entry.winRateBps / 100).toFixed(0)}%`],
+            ["Win rate", entry.winRateBps === null ? "Open" : `${(entry.winRateBps / 100).toFixed(0)}%`],
           ].map(([label, value]) => (
             <div key={label}>
               <dt className="text-xs text-muted">{label}</dt>

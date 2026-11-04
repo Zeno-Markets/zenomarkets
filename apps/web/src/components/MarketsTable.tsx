@@ -18,6 +18,7 @@ import { useWatchlist } from "@/stores/watchlist";
 import { Change, fmtChange } from "./Change";
 import { MarketLogo } from "./MarketLogo";
 import { PanelState } from "./PanelState";
+import { NONE } from "./None";
 
 type View = "markets" | "watchlist";
 
@@ -114,7 +115,7 @@ function sorted(lines: Row[], key: SortKey, direction: "asc" | "desc"): Row[] {
 
 /// A figure once it has loaded, a pulse while it loads, and a dash when this market has none.
 function Figure({ loading, children }: { loading: boolean; children: ReactNode }) {
-  return loading ? <Skeleton className="w-14" /> : (children ?? "–");
+  return loading ? <Skeleton className="w-14" /> : (children ?? NONE);
 }
 
 function Trend({ closes, up }: { closes: number[]; up: boolean }) {

@@ -88,7 +88,8 @@ export function expiryDates(days: number[], nowSeconds: bigint, hourUtc: number,
 export const strikeText = (strike: bigint) => String(Number(formatUnits(strike, 18)));
 
 /// Quote figures from the pricing service are floats for display only. Premium per underlying unit.
-export const fmtQuotePremium = (premium: number) => `$${premium.toFixed(2)}`;
+/// Deep out-of-the-money premiums round to nothing at cents; they read "<$0.01", never "$0.00".
+export const fmtQuotePremium = (premium: number) => (premium < 0.005 ? "<$0.01" : `$${premium.toFixed(2)}`);
 export const fmtQuoteIv = (iv: number) => `${(iv * 100).toFixed(1)}%`;
 /// `toFixed` keeps the sign of a tiny negative ("-0.00"); a figure that rounds to zero has no sign.
 const fixed = (value: number, digits: number) => value.toFixed(digits).replace(/^-(0\.?0*)$/, "$1");

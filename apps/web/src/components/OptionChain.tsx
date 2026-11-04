@@ -62,16 +62,17 @@ interface Column {
 
 /// A pulse while the first answer loads, "–" when the service could not give one.
 function quoted(quote: Quote, format: (data: OptionsQuoteResult) => string): ReactNode {
-  return quote.data ? format(quote.data) : quote.isError ? "–" : <Skeleton className="w-10" />;
+  return quote.data ? format(quote.data) : quote.isError ? <span aria-label="not yet" className="inline-block h-1.5 w-8 rounded-full bg-line align-middle" /> : <Skeleton className="w-10" />;
 }
 
 /// Open interest and volume come from the indexer. A series nobody has traded is not in its answer,
 /// which means zero, not "unknown".
 function counted(stats: Stats, context: CellContext, pick: (row: OptionSeriesStats) => bigint): ReactNode {
-  if (!env.apiUrl || stats.isError) return "–";
+  if (!env.apiUrl || stats.isError) return <span aria-label="not yet" className="inline-block h-1.5 w-8 rounded-full bg-line align-middle" />;
   if (!stats.data) return <Skeleton className="w-8" />;
   const row = stats.data.get(seriesKey(context.strike, context.side));
-  return fmtContracts(row ? pick(row) : 0n);
+  // A series nobody has traded yet shows a quiet bar, not a zero.
+  return row && pick(row) > 0n ? fmtContracts(pick(row)) : <span aria-label="not yet" className="inline-block h-1.5 w-8 rounded-full bg-line align-middle" />;
 }
 
 /// The ask is the only selectable cell: it is the price opening pays, and picking it fills the

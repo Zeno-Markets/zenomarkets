@@ -32,7 +32,7 @@ export function AdjustPosition({ position, decimals }: { position: PerpPosition;
         label="Size change"
         className="w-44"
         value={size}
-        placeholder="0.00"
+        placeholder="100"
         suffix="USD"
         invalid={size !== "" && !validSize}
         hint={`of ${fmtUsd(position.size, decimals, 0)}`}
@@ -42,7 +42,7 @@ export function AdjustPosition({ position, decimals }: { position: PerpPosition;
         label="Add margin (increase only)"
         className="w-52"
         value={collateral}
-        placeholder="0.00"
+        placeholder="100"
         suffix="USD"
         invalid={!validCollateral}
         onValueChange={setCollateral}

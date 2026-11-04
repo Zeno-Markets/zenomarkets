@@ -22,6 +22,7 @@ import {
   STRATEGY_SUMMARY,
 } from "@/lib/strategies";
 import { useTerminal } from "@/stores/terminal";
+import { NONE } from "./None";
 
 const toNumber = (value: bigint) => Number(formatUnits(value, 18));
 const selectClass = cn(fieldBorder, "h-8 rounded-md border bg-raised px-2 text-sm text-text hover:bg-accent-soft");
@@ -305,7 +306,7 @@ export function StrategyBuilder() {
                 <Stat label="Net premium">{fmtNet(result.netPremium)}</Stat>
                 <Stat label="Max profit">{fmtLimit(result.maxProfit)}</Stat>
                 <Stat label="Max loss">{fmtLimit(result.maxLoss)}</Stat>
-                <Stat label="Break-even">{result.breakEvens.length === 0 ? "–" : result.breakEvens.map((price) => price.toFixed(2)).join(" · ")}</Stat>
+                <Stat label="Break-even">{result.breakEvens.length === 0 ? NONE : result.breakEvens.map((price) => price.toFixed(2)).join(" · ")}</Stat>
               </dl>
               <PayoffChart legs={result.legs} low={range[0]} high={range[1]} spot={spot} breakEvens={result.breakEvens} />
               </div>
@@ -326,7 +327,7 @@ export function StrategyBuilder() {
                         <span className={leg.side === "LONG" ? "text-up" : "text-down"}>{leg.side === "LONG" ? "Long" : "Short"}</span>{" "}
                         {leg.kind === "UNDERLYING" ? "underlying" : leg.kind.toLowerCase()}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums">{leg.strike ?? "–"}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{leg.strike ?? NONE}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{leg.quantity}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{`$${leg.price.toFixed(2)}`}</td>
                     </tr>

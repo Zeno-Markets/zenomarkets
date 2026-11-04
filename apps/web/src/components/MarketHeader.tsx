@@ -11,6 +11,7 @@ import { useTerminal } from "@/stores/terminal";
 import { useWatchlist } from "@/stores/watchlist";
 import { Change, fmtChange, useStatsFor } from "./Change";
 import { Term } from "./Term";
+import { NONE } from "./None";
 
 /// The watchlist star in the palette's gold: an outline when the market is not pinned, filled when it is.
 function Star({ filled }: { filled: boolean }) {
@@ -39,13 +40,13 @@ export function MarketHeader() {
   const unpriced = Boolean(symbol) && !data && !isPending;
   // The last close from Robinhood, shown while the equity session is shut and the chain has no price.
   const close = useReferenceQuotes().data?.[symbol];
-  const figure = (node: ReactNode, width: string) => (data ? node : unpriced ? "–" : <Skeleton className={width} />);
+  const figure = (node: ReactNode, width: string) => (data ? node : unpriced ? NONE : <Skeleton className={width} />);
 
   return (
     <div className="flex shrink-0 flex-col gap-3 rounded-panel border border-line/70 bg-surface p-3 lg:flex-row lg:items-center lg:gap-8 lg:px-4">
       <div className="flex items-center justify-between gap-3 xl:block">
         <div className="flex items-baseline gap-2">
-          <h1 className="font-display text-title font-semibold">{symbol ? `${symbol}-PERP` : "–"}</h1>
+          <h1 className="font-display text-title font-semibold">{symbol ? `${symbol}-PERP` : NONE}</h1>
           {paused ? (
             <span className="rounded-sm border border-down px-1 text-xs text-down" title={paused}>
               Paused
@@ -93,8 +94,8 @@ export function MarketHeader() {
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 lg:flex-1">
         <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:flex sm:flex-wrap sm:gap-x-5 xl:gap-x-4">
           <Stat label="Index price">{figure(data && fmtPrice(data.indexPrice), "w-14")}</Stat>
-          <Stat label={<Term term="fundingRate">Funding rate</Term>}>{figure(data && fmtBps(data.funding.currentFundingRateBps), "w-14")}</Stat>
-          <Stat label="Next funding">{data && now ? fmtCountdown(data.funding.nextFundingTimestamp, now) : figure(undefined, "w-14")}</Stat>
+          <Stat label={<Term term="fundingRate">Funding rate</Term>}>{figure(data && (data.funding.currentFundingRateBps ? fmtBps(data.funding.currentFundingRateBps) : "Balanced"), "w-14")}</Stat>
+          {data && now && Number(data.funding.nextFundingTimestamp) * 1000 > now ? <Stat label="Next funding">{fmtCountdown(data.funding.nextFundingTimestamp, now)}</Stat> : null}
           <Stat label="Max leverage">{figure(data && `${data.risk.maxLeverage}x`, "w-10")}</Stat>
         </dl>
         {symbol && ready ? (

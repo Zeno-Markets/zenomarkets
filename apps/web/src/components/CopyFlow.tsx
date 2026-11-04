@@ -126,7 +126,7 @@ export function CopyFlow({ leader }: { leader: Address }) {
             { label: "Limit per trade", value: `$${maxTrade}` },
             { label: "Limit on total exposure", value: `$${maxExposure}` },
             { label: "Highest leverage", value: `${maxLeverage}x` },
-            { label: "Who can trade", value: executor ? `Zeno's executor (${shortHash(executor)}) can open and close trades in the copy account. It cannot withdraw.` : "–" },
+            { label: "Who can trade", value: executor ? `The ZENO executor can open and close trades in the copy account. It cannot withdraw.` : "–" },
             { label: "Venue cut", value: "None extra. Each copied trade pays the normal trading fee." },
             { label: "Confirmations", value: "Create account (once), fund, allow executor, then sign your limits." },
           ]}

@@ -11,6 +11,7 @@ import { fmtPrice, fmtUsd } from "@/lib/format";
 import { perpLabel } from "@/lib/market";
 import { orderState, sortOrders } from "@/lib/orders";
 import { TriggerOrdersTable } from "./TriggerOrders";
+import { NONE } from "./None";
 
 const head = "px-3 py-2 text-right text-xs font-normal text-muted first:text-left";
 const cell = "px-3 py-2 text-right tabular-nums first:text-left";
@@ -43,7 +44,7 @@ function OrderRow({ order, decimals, nowMs }: { order: OpenOrder; decimals: numb
         {order.isLong ? "≤ " : "≥ "}
         {fmtPrice(order.triggerPrice)}
       </td>
-      <td className={cell}>{state === "open" ? fmtExpiry(order.expiry, nowMs) : "–"}</td>
+      <td className={cell}>{state === "open" ? fmtExpiry(order.expiry, nowMs) : NONE}</td>
       <td className={cell}>
         <span className={state === "open" ? "text-text" : "text-muted"}>{STATE_TEXT[state]}</span>
       </td>

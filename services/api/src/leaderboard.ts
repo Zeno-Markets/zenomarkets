@@ -39,7 +39,7 @@ export function parseBoardQuery(query: Record<string, string | undefined>): Boar
   return { metric: metric as Metric, window: window as StatsWindow, limit, offset, sample: query.sample === "1" };
 }
 
-/// Lowercase addresses from a comma-separated environment value (`SAMPLE_WALLETS`): the simulator's bot wallets.
+/// Lowercase addresses from a comma-separated environment value (`SAMPLE_WALLETS`): the venue's own desk wallets.
 export function parseWalletList(value: string | undefined): string[] {
   return (value ?? "")
     .split(",")
@@ -84,10 +84,13 @@ export interface StatsRow {
   winRateBps: number | null;
 }
 
+/// A desk wallet's address never leaves the API: its row carries this label instead.
+export const DESK_LABEL = "desk";
+
 export function entriesFromRows(rows: readonly StatsRow[], offset: number, sampleWallets: ReadonlySet<string>): BoardEntry[] {
   return rows.map((row, index) => ({
     rank: offset + index + 1,
-    wallet: row.wallet,
+    wallet: sampleWallets.has(row.wallet) ? `${DESK_LABEL}-${index + offset + 1}` : row.wallet,
     realisedPnl: row.realisedPnl,
     unrealisedPnl: row.unrealisedPnl,
     totalPnl: row.totalPnl,

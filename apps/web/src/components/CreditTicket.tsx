@@ -151,7 +151,7 @@ export function CreditTicket({
         className="max-w-xs"
         value={amount}
         onValueChange={setAmount}
-        placeholder="0.00"
+        placeholder="100"
         invalid={amount !== "" && !valid}
       />
       {!guided && review?.rows ? <ReviewStep title="Review: every figure" className="max-w-md" rows={review.rows} worstCase={review.worstCase} /> : null}

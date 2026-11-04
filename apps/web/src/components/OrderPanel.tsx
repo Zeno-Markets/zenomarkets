@@ -121,7 +121,7 @@ export function OrderPanel() {
             : undefined;
   const blocker = problem ?? waiting;
   /// A figure once the preview is in, a pulse while it is being priced, a dash before there is anything to price.
-  const show = (value: string | undefined | "") => (value ? value : validAmount && validLimit && preview.isFetching ? <Skeleton className="w-16" /> : "–");
+  const show = (value: string | undefined | "") => (value ? value : validAmount && validLimit && preview.isFetching ? <Skeleton className="w-16" /> : <span aria-label="not yet" className="inline-block h-1.5 w-8 rounded-full bg-line align-middle" />);
 
   async function submit() {
     // Sign only what was reviewed: a preview still showing an earlier side is not this order.
@@ -279,14 +279,14 @@ export function OrderPanel() {
           value={collateral}
           onValueChange={setCollateral}
           suffix="USD"
-          placeholder="0.00"
+          placeholder="100"
           hint={balances ? `Available ${fmtUsd(balances.available, decimals)}` : undefined}
         />
 
         <div>
           <p className="mb-1 text-xs text-muted">Leverage</p>
           {tiers.length === 0 ? (
-            <p className="text-muted">–</p>
+            <Skeleton className="w-24" />
           ) : (
             <Segmented
               label="Leverage"

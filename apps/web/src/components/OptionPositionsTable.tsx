@@ -15,6 +15,7 @@ import { fmtSigned, fmtUsd, signTone } from "@/lib/format";
 import { symbolOf, tradeBlocker } from "@/lib/market";
 import { optionCodeOf } from "@/lib/options";
 import { zenoRead } from "@/lib/zeno";
+import { NONE } from "./None";
 
 const head = "px-3 py-2 text-right text-xs font-normal text-muted first:text-left";
 const cell = "px-3 py-2 text-right tabular-nums first:text-left";
@@ -99,13 +100,13 @@ function OptionRow({ position, decimals }: { position: OptionPosition; decimals:
       </td>
       <td className={cell}>{position.contracts.toString()}</td>
       <td className={cell}>{fmtUsd(position.entryPremium, decimals)}</td>
-      <td className={cell}>{isOpen && !expired ? fmtUsd(mark.data, decimals) : "–"}</td>
+      <td className={cell}>{isOpen && !expired ? fmtUsd(mark.data, decimals) : NONE}</td>
       <td className={cell}>{fmtUsd(position.collateral, decimals)}</td>
       <td className={cell}>
-        <Num tone={signTone(unrealized, decimals)}>{isOpen && !expired ? fmtSigned(unrealized, decimals) : "–"}</Num>
+        <Num tone={signTone(unrealized, decimals)}>{isOpen && !expired ? fmtSigned(unrealized, decimals) : NONE}</Num>
       </td>
       <td className={cell}>
-        <Num tone={signTone(position.realizedPnl, decimals)}>{isOpen ? "–" : fmtSigned(position.realizedPnl, decimals)}</Num>
+        <Num tone={signTone(position.realizedPnl, decimals)}>{isOpen ? NONE : fmtSigned(position.realizedPnl, decimals)}</Num>
       </td>
       <td className={cell}>{isOpen && expired ? "Expired" : statusLabel[position.status]}</td>
       <td className="px-3 py-2 text-right">
