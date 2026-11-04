@@ -37,6 +37,9 @@ async function attempt(label: string, action: () => Promise<string>) {
 }
 
 const usdg = await wallet.readContract({ address: token, abi: erc20, functionName: "decimals" });
+/// ONLY=lending runs the loan step alone (after a first run whose loan was refused).
+const trading = process.env.ONLY !== "lending";
+if (trading) {
 for (let i = 0; i < 6; i++) await send(token, "mint", [account.address, parseUnits("10000", usdg)]);
 await zeno.erc20.approve(token, addresses.vault, "40000", { wait: true });
 await zeno.vault.deposit(token, "40000", { wait: true });
@@ -84,6 +87,8 @@ for (const [underlying, type, moneyness, days] of [["NVDA", "CALL", 1.05, 7], ["
     const opened = await zeno.options.openPosition({ ...series, authorization: preview.authorization, tx: { wait: true } });
     return `position #${opened.positionId}, strike ${strike}, premium ${preview.premium}`;
   });
+}
+
 }
 
 const pair = addresses.creditPairTslaUsdg as Address | undefined;

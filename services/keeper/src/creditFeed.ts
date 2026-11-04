@@ -6,7 +6,10 @@ const oracleAbi = parseAbi([
   "function setPrice(address asset, uint256 price)",
   "function forcePrice(address asset, uint256 price)",
 ]);
-const pairAbi = parseAbi(["function collateralToken() view returns (address)"]);
+const pairAbi = parseAbi(["function collateralToken() view returns (address)", "function debtToken() view returns (address)"]);
+/// The loan is in USDG, a dollar stablecoin: the oracle holds it at $1, refreshed well inside its staleness window.
+const DOLLAR = 10n ** 18n;
+const DEBT_REFRESH_SECONDS = 12n * 3600n;
 /// The router's primary source is `ZenoChainlinkFeedAdapter`, not the aggregator: it answers `latestPrice` and `decimals`.
 const feedAbi = parseAbi([
   "function decimals() view returns (uint8)",
@@ -39,7 +42,19 @@ export function createCreditFeed(deps: CreditFeedDeps) {
   const account: Account = walletClient.account!;
   const log = deps.log ?? ((message: string) => console.log(`keeper: ${message}`));
 
+  async function pushDebtPrice(): Promise<void> {
+    const debt = await publicClient.readContract({ address: deps.creditPair, abi: pairAbi, functionName: "debtToken" });
+    const [price, lastUpdated] = await publicClient.readContract({ address: creditOracle, abi: oracleAbi, functionName: "prices", args: [debt] });
+    const now = (await publicClient.getBlock()).timestamp;
+    if (price === DOLLAR && now - lastUpdated < DEBT_REFRESH_SECONDS) return;
+    const { request } = await publicClient.simulateContract({ address: creditOracle, abi: oracleAbi, functionName: price === 0n || price === DOLLAR ? "setPrice" : "forcePrice", args: [debt, DOLLAR], account });
+    const hash = await walletClient.writeContract(request);
+    await publicClient.waitForTransactionReceipt({ hash });
+    log(`credit oracle price 1.00 for the debt token ${debt} (${hash})`);
+  }
+
   return async function pushCreditPrice(): Promise<boolean> {
+    await pushDebtPrice();
     const [collateral, feed] = await Promise.all([
       publicClient.readContract({ address: deps.creditPair, abi: pairAbi, functionName: "collateralToken" }),
       publicClient.readContract({ address: deps.oracleRouter, abi: routerAbi, functionName: "primarySource", args: [deps.collateralMarketId] }),
