@@ -97,10 +97,15 @@ if (pair) {
     const market = await zeno.credit.market(pair);
     const collateral = market.collateralToken as Address;
     const cDecimals = await wallet.readContract({ address: collateral, abi: erc20, functionName: "decimals" });
-    await send(token, "transfer", [pair, parseUnits("15000", usdg)]);
-    await send(collateral, "mint", [account.address, parseUnits("10", cDecimals)]);
-    await send(collateral, "approve", [pair, parseUnits("5", cDecimals)]);
-    await zeno.credit.depositCollateral(pair, parseUnits("5", cDecimals), { wait: true });
+    // Each part runs only if an earlier, interrupted run has not done it yet.
+    const balanceAbi = parseAbi(["function balanceOf(address) view returns (uint256)"]);
+    const liquidity = await wallet.readContract({ address: token, abi: balanceAbi, functionName: "balanceOf", args: [pair] });
+    if (liquidity < parseUnits("10000", usdg)) await send(token, "transfer", [pair, parseUnits("15000", usdg)]);
+    if ((await zeno.credit.position(pair, account.address)).collateralAmount < parseUnits("5", cDecimals)) {
+      await send(collateral, "mint", [account.address, parseUnits("10", cDecimals)]);
+      await send(collateral, "approve", [pair, parseUnits("5", cDecimals)]);
+      await zeno.credit.depositCollateral(pair, parseUnits("5", cDecimals), { wait: true });
+    }
     await zeno.credit.borrow(pair, parseUnits("600", usdg), { wait: true });
     const position = await zeno.credit.position(pair, account.address);
     return `health ${(Number(position.healthFactorBps) / 10_000).toFixed(2)}x`;
