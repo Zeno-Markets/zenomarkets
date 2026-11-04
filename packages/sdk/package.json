@@ -1,0 +1,75 @@
+{
+  "name": "@zeno/sdk",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Zeno typed client \u2014 the only sanctioned way to talk to contracts/API from any frontend or integrator.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsup",
+    "lint": "echo \"scaffold: packages/sdk lint \u2014 Phase 3\" && exit 0",
+    "test": "tsx --test src/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "generate:abis": "node scripts/generate-abis.mjs",
+    "prepublishOnly": "pnpm build && pnpm test",
+    "smoke:testnet": "tsx scripts/testnet-smoke.ts",
+    "lifecycle:testnet": "tsx scripts/testnet-lifecycle.ts",
+    "perp:testnet": "tsx scripts/testnet-perp.ts"
+  },
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "tsup": "^8",
+    "@zeno/config": "workspace:*",
+    "@zeno/types": "workspace:*"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/index.d.ts",
+          "default": "./dist/index.js"
+        },
+        "require": {
+          "types": "./dist/index.d.cts",
+          "default": "./dist/index.cjs"
+        }
+      }
+    },
+    "access": "public"
+  },
+  "sideEffects": false,
+  "license": "MIT",
+  "author": "RubenDev",
+  "homepage": "https://github.com/ZENOMARKETS/zenomarkets/tree/main/packages/sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZENOMARKETS/zenomarkets.git",
+    "directory": "packages/sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/ZENOMARKETS/zenomarkets/issues"
+  },
+  "keywords": [
+    "zeno",
+    "derivatives",
+    "options",
+    "perpetuals",
+    "tokenized-equities",
+    "viem",
+    "robinhood-chain"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}

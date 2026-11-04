@@ -1,0 +1,38 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc_version = "0.8.26"
+optimizer = true
+optimizer_runs = 200
+via_ir = false
+fs_permissions = [{ access = "read-write", path = "./deployments" }, { access = "read", path = "./test/vectors" }]
+
+[profile.default.fuzz]
+runs = 1024
+
+[profile.default.invariant]
+runs = 64
+depth = 100
+
+[profile.ci]
+fuzz = { runs = 10000 }
+verbosity = 3
+
+[rpc_endpoints]
+robinhood_testnet = "${ROBINHOOD_TESTNET_RPC_URL}"
+
+[etherscan]
+robinhood_testnet = { key = "${EXPLORER_API_KEY}", url = "${EXPLORER_VERIFY_URL}" }
+
+# `forge coverage` compiles with the optimizer disabled, and the credit stack's math-heavy functions
+# then need one stack slot more than the EVM allows ("Stack too deep"). These two blocks compile just
+# those files through the IR pipeline, which has no such limit, and leave every other contract compiled
+# exactly as before. Remove them if the credit contracts are ever simplified enough not to need it.
+[[profile.default.additional_compiler_profiles]]
+name = "credit-via-ir"
+via_ir = true
+
+[[profile.default.compilation_restrictions]]
+paths = "src/credit/**"
+via_ir = true

@@ -1,0 +1,58 @@
+import { requireEnv, resolveChainId } from "@zeno/config";
+import { Zeno } from "@zeno/sdk";
+import websocket from "@fastify/websocket";
+import Fastify from "fastify";
+import { createPublicClient, http, type PublicClient } from "viem";
+import { registerCors } from "./cors.js";
+import { resolveCreditPair } from "./credit.js";
+import { registerCopyRoutes } from "./routes/copy.js";
+import { registerCreditRoutes } from "./routes/credit.js";
+import { registerAlertRoutes } from "./routes/alerts.js";
+import { registerAdvancedRoutes } from "./routes/advanced.js";
+import { registerAnalyticsRoutes } from "./routes/analytics.js";
+import { registerLeaderboardRoutes } from "./routes/leaderboard.js";
+import { registerMarketRoutes } from "./routes/markets.js";
+import { registerOptionRoutes } from "./routes/options.js";
+import { registerPerpRoutes } from "./routes/perps.js";
+import { registerPortfolioRoutes } from "./routes/portfolio.js";
+import { registerQuotedRoutes } from "./routes/quoted.js";
+import { registerPriceRoutes } from "./routes/prices.js";
+import { registerRfqRoutes } from "./routes/rfq.js";
+import { httpUpstream, registerRpcProxy } from "./rpcProxy.js";
+import { registerStatsRoutes } from "./routes/stats.js";
+import { registerTradeRoutes } from "./routes/trade.js";
+import { registerWebSocket } from "./ws.js";
+
+export function buildServer() {
+  const chainId = resolveChainId(process.env.CHAIN_ID);
+  const rpcUrl = requireEnv("RPC_URL");
+  const zeno = new Zeno({ chainId, transport: http(rpcUrl) });
+
+  const app = Fastify({ logger: true });
+
+  registerCors(app);
+  app.register(websocket);
+  app.get("/health", async () => ({ ok: true }));
+
+  app.register(async (instance) => {
+    registerRpcProxy(instance, httpUpstream(rpcUrl));
+    registerMarketRoutes(instance, zeno);
+    registerOptionRoutes(instance, zeno);
+    registerPerpRoutes(instance, zeno);
+    registerPriceRoutes(instance, zeno);
+    registerPortfolioRoutes(instance, zeno);
+    registerQuotedRoutes(instance);
+    registerStatsRoutes(instance);
+    registerAnalyticsRoutes(instance);
+    registerAdvancedRoutes(instance, zeno);
+    registerAlertRoutes(instance);
+    registerLeaderboardRoutes(instance, zeno);
+    registerCopyRoutes(instance, zeno);
+    registerCreditRoutes(instance, createPublicClient({ transport: http(rpcUrl) }), resolveCreditPair(zeno.addresses, process.env.CREDIT_PAIR_ADDRESS));
+    registerTradeRoutes(instance, zeno);
+    registerRfqRoutes(instance, zeno);
+    registerWebSocket(instance, zeno);
+  });
+
+  return app;
+}

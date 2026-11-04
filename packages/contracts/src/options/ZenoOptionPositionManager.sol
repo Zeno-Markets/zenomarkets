@@ -1,0 +1,109 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.26;
+
+import {UpgradeableBase} from "../proxy/UpgradeableBase.sol";
+import {OptionType} from "../interfaces/DataTypes.sol";
+
+/// @notice Option position storage and accounting only — no pricing, no settlement math
+/// (kept separate so each contract has one responsibility). Written only by ZenoOptionsEngine.
+contract ZenoOptionPositionManager is UpgradeableBase {
+    /// @notice Granted to ZenoOptionsEngine.
+    bytes32 public constant ENGINE_ROLE = keccak256("ENGINE_ROLE");
+
+    enum PositionStatus {
+        OPEN,
+        CLOSED,
+        SETTLED
+    }
+
+    struct OptionPosition {
+        bytes32 marketId;
+        OptionType optionType;
+        uint256 strike;
+        uint256 expiry;
+        uint256 contracts;
+        uint256 entryPremium;
+        uint256 collateral;
+        int256 realizedPnl;
+        PositionStatus status;
+        address owner;
+    }
+
+    error PositionNotFound(uint256 positionId);
+    error PositionNotOpen(uint256 positionId);
+
+    mapping(uint256 => OptionPosition) private _positions;
+    mapping(address => uint256[]) private _userPositions;
+    /// @notice seriesId => open+closed+settled position ids in that series, so
+    /// ZenoOptionsEngine.settleExpired can enumerate every position in a series to settle.
+    mapping(bytes32 => uint256[]) private _seriesPositions;
+    uint256 public nextPositionId;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address admin) external initializer {
+        __UpgradeableBase_init(admin);
+    }
+
+    function createPosition(OptionPosition calldata pos, bytes32 seriesId)
+        external
+        onlyRole(ENGINE_ROLE)
+        returns (uint256 positionId)
+    {
+        positionId = ++nextPositionId;
+        _positions[positionId] = pos;
+        _userPositions[pos.owner].push(positionId);
+        _seriesPositions[seriesId].push(positionId);
+    }
+
+    function closePosition(uint256 positionId, int256 realizedPnl) external onlyRole(ENGINE_ROLE) {
+        OptionPosition storage p = _positions[positionId];
+        if (p.owner == address(0)) revert PositionNotFound(positionId);
+        if (p.status != PositionStatus.OPEN) revert PositionNotOpen(positionId);
+        p.status = PositionStatus.CLOSED;
+        p.realizedPnl = realizedPnl;
+    }
+
+    function settlePosition(uint256 positionId, int256 realizedPnl) external onlyRole(ENGINE_ROLE) {
+        OptionPosition storage p = _positions[positionId];
+        if (p.owner == address(0)) revert PositionNotFound(positionId);
+        if (p.status != PositionStatus.OPEN) revert PositionNotOpen(positionId);
+        p.status = PositionStatus.SETTLED;
+        p.realizedPnl = realizedPnl;
+    }
+
+    function getPosition(uint256 positionId) external view returns (OptionPosition memory) {
+        return _positions[positionId];
+    }
+
+    function getUserPositions(address user) external view returns (uint256[] memory) {
+        return _userPositions[user];
+    }
+
+    function getSeriesPositions(bytes32 seriesId) external view returns (uint256[] memory) {
+        return _seriesPositions[seriesId];
+    }
+
+    function seriesPositionCount(bytes32 seriesId) external view returns (uint256) {
+        return _seriesPositions[seriesId].length;
+    }
+
+    /// @notice The position ids of a series from index `from` up to but not including `to`, so a large series
+    /// is read in bounded pieces instead of all at once. `to` is capped at the series length.
+    function getSeriesPositionsRange(bytes32 seriesId, uint256 from, uint256 to)
+        external
+        view
+        returns (uint256[] memory ids)
+    {
+        uint256[] storage all = _seriesPositions[seriesId];
+        if (to > all.length) to = all.length;
+        if (from >= to) return new uint256[](0);
+        ids = new uint256[](to - from);
+        for (uint256 i = 0; i < ids.length; i++) {
+            ids[i] = all[from + i];
+        }
+    }
+}

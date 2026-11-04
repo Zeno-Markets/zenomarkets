@@ -1,0 +1,31 @@
+{
+  "name": "@zeno/indexer",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Zeno contract event indexer (replay-safe, PostgreSQL-backed).",
+  "scripts": {
+    "build": "echo \"scaffold: services/indexer build — Phase 2\" && exit 0",
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "reconcile": "tsx src/reconcile.ts",
+    "lint": "echo \"scaffold: services/indexer lint — Phase 2\" && exit 0",
+    "test": "tsx --test src/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@zeno/config": "workspace:*",
+    "@zeno/sdk": "workspace:*",
+    "@zeno/types": "workspace:*",
+    "drizzle-orm": "^0.36.0",
+    "postgres": "^3.4.0",
+    "viem": "^2.21.0",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@types/web-push": "^3.6.4",
+    "drizzle-kit": "^0.28.0"
+  }
+}

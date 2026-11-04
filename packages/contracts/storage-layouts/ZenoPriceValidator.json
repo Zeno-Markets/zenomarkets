@@ -1,0 +1,114 @@
+{
+  "storage": [
+    {
+      "label": "maxPriceAge",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_mapping(t_bytes32,t_uint256)"
+    },
+    {
+      "label": "maxDeviationBps",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_mapping(t_bytes32,t_uint256)"
+    },
+    {
+      "label": "tradingSession",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_mapping(t_bytes32,t_struct(TradingSession)_storage)"
+    },
+    {
+      "label": "sessionHoliday",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_mapping(t_bytes32,t_mapping(t_uint256,t_bool))"
+    }
+  ],
+  "types": {
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_bytes32,t_mapping(t_uint256,t_bool))": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => mapping(uint256 => bool))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_bool)"
+    },
+    "t_mapping(t_bytes32,t_struct(TradingSession)_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct ZenoPriceValidator.TradingSession)",
+      "numberOfBytes": "32",
+      "value": "t_struct(TradingSession)_storage"
+    },
+    "t_mapping(t_bytes32,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_uint256,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_struct(TradingSession)_storage": {
+      "encoding": "inplace",
+      "label": "struct ZenoPriceValidator.TradingSession",
+      "members": [
+        {
+          "label": "openSecond",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint32"
+        },
+        {
+          "label": "closeSecond",
+          "offset": 4,
+          "slot": "0",
+          "type": "t_uint32"
+        },
+        {
+          "label": "daysMask",
+          "offset": 8,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "label": "preOpenGrace",
+          "offset": 9,
+          "slot": "0",
+          "type": "t_uint32"
+        }
+      ],
+      "numberOfBytes": "32"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint32": {
+      "encoding": "inplace",
+      "label": "uint32",
+      "numberOfBytes": "4"
+    },
+    "t_uint8": {
+      "encoding": "inplace",
+      "label": "uint8",
+      "numberOfBytes": "1"
+    }
+  }
+}

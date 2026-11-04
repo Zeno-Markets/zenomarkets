@@ -1,0 +1,154 @@
+import { type Account, type Address, createWalletClient, publicActions, type Transport } from "viem";
+import { chains, resolveAddresses, type ChainId, type ContractAddresses } from "@zeno/config";
+import { createDecimalsReader, createErc20, type Erc20Namespace } from "./erc20.js";
+import { createCredit, type CreditNamespace } from "./credit.js";
+import { createExplorer, type ExplorerNamespace } from "./explorer.js";
+import { createFees, type FeesNamespace } from "./fees.js";
+import { createSubaccounts, type SubaccountsNamespace } from "./accounts.js";
+import { createCrossMargin, type CrossMarginNamespace } from "./crossmargin.js";
+import { createStructured, type StructuredNamespace } from "./structured.js";
+import { createRfq, type RfqNamespace } from "./rfq.js";
+import { createTrading, type TradingNamespace } from "./trading.js";
+import { createInstitutional, type InstitutionalNamespace } from "./institutional.js";
+import { createLeaderboard, type LeaderboardNamespace } from "./leaderboard.js";
+import { createFunding, type FundingNamespace } from "./funding.js";
+import { createMarkets, type MarketsNamespace } from "./markets.js";
+import { createOptions, type OptionsNamespace } from "./options.js";
+import { createOracle, createPrices, type OracleNamespace, type PricesNamespace } from "./oracle.js";
+import { createPerps, type PerpsNamespace } from "./perps.js";
+import { createPortfolio, type PortfolioNamespace } from "./portfolio.js";
+import { createRisk, type RiskNamespace } from "./risk.js";
+import { createStream, type StreamNamespace, type WebSocketConstructor } from "./stream.js";
+import { createVault, type VaultNamespace } from "./vault.js";
+
+export interface ZenoConfig {
+  chainId: ChainId;
+  /// Contract addresses to use instead of the checked-in deployment for `chainId` — for a local
+  /// Anvil deployment or a fresh testnet redeploy (PROJECT_BRIEF.md Section 4: never hardcode
+  /// per-environment addresses in client logic). When omitted, the checked-in deployment is used
+  /// with any overrides from the `ZENO_ADDRESSES` environment variable (see `resolveAddresses`).
+  addresses?: ContractAddresses;
+  /// Caller-supplied transport (PROJECT_BRIEF.md Section 34) — e.g. `custom(window.ethereum)`
+  /// in a browser, or `http(rpcUrl)` for a script. No default RPC is baked in: Robinhood's own
+  /// default RPC had an expired TLS cert at deploy time (CHANGELOG [1.0.0-testnet]).
+  transport: Transport;
+  /// Required only for methods that send transactions (openPosition, deposit, approve, ...).
+  /// Read-only usage (markets.list, portfolio.positions) works without it.
+  account?: Account | Address;
+  /// Base URL of `services/api` (e.g. `http://localhost:4000`, no trailing slash or `/v1`
+  /// suffix). Required only for what the SDK cannot serve from the chain alone: `options.quote`
+  /// / `previewOpen` / `chain` / `expiries` (pricing + indexer), `portfolio.history` /
+  /// `orders` (indexer), and `stream.subscribe`. Omitting it keeps every other method working;
+  /// those throw `NotImplementedError` instead.
+  apiUrl?: string;
+  /// Block explorer base URL (`NEXT_PUBLIC_EXPLORER_URL`), used by `explorer.*` links.
+  explorerUrl?: string;
+  /// WebSocket implementation for `stream.subscribe` on runtimes without a global `WebSocket`
+  /// (Node < 22): pass the `ws` package's `WebSocket` class.
+  webSocket?: WebSocketConstructor;
+}
+
+function buildClient(config: ZenoConfig) {
+  return createWalletClient({
+    chain: chains[config.chainId],
+    transport: config.transport,
+    account: config.account,
+  }).extend(publicActions);
+}
+
+export type ZenoClient = ReturnType<typeof buildClient>;
+
+/// `simulateContract`'s `request` result carries an `account` typed against this client's
+/// account generic, which is `Account | undefined` here since `ZenoConfig.account` is
+/// optional (read-only usage must work without one) — but viem's `writeContract` parameter
+/// type requires `Account | Address | null`, rejecting `undefined` even though the value at
+/// that point is exactly what `simulateContract` just produced for that same client. The cast
+/// is confined to this one function, and only ever receives a `request` this SDK generated
+/// from its own `simulateContract` call, never a value a caller constructed by hand; a caller
+/// who omitted `account` still gets viem's own runtime "no account" error on the write.
+export function sendTransaction(client: ZenoClient, request: object) {
+  return client.writeContract(request as Parameters<ZenoClient["writeContract"]>[0]);
+}
+
+export class Zeno {
+  readonly chainId: ChainId;
+  readonly addresses: ContractAddresses;
+  readonly markets: MarketsNamespace;
+  readonly options: OptionsNamespace;
+  readonly perps: PerpsNamespace;
+  readonly portfolio: PortfolioNamespace;
+  readonly vault: VaultNamespace;
+  readonly erc20: Erc20Namespace;
+  readonly oracle: OracleNamespace;
+  readonly prices: PricesNamespace;
+  readonly funding: FundingNamespace;
+  readonly risk: RiskNamespace;
+  readonly fees: FeesNamespace;
+  readonly explorer: ExplorerNamespace;
+  readonly stream: StreamNamespace;
+  readonly institutional: InstitutionalNamespace;
+  readonly trading: TradingNamespace;
+  readonly subaccounts: SubaccountsNamespace;
+  readonly crossMargin: CrossMarginNamespace;
+  readonly rfq: RfqNamespace;
+  readonly structured: StructuredNamespace;
+  readonly leaderboard: LeaderboardNamespace;
+  readonly credit: CreditNamespace;
+
+  constructor(config: ZenoConfig) {
+    this.chainId = config.chainId;
+    this.addresses = config.addresses ?? resolveAddresses(config.chainId);
+
+    const client = buildClient(config);
+    const decimals = createDecimalsReader(client);
+
+    this.markets = createMarkets(client, this.addresses, config.apiUrl);
+    this.oracle = createOracle(client, this.addresses);
+    this.prices = createPrices(client, this.addresses, this.oracle, config.apiUrl);
+    this.funding = createFunding(client, this.addresses, config.apiUrl);
+    this.risk = createRisk(client, this.addresses, config.apiUrl);
+    this.fees = createFees(client, this.addresses);
+    this.erc20 = createErc20(client, decimals);
+    this.vault = createVault(client, this.addresses, decimals);
+    this.options = createOptions({
+      client,
+      addresses: this.addresses,
+      decimals,
+      markets: this.markets,
+      fees: this.fees,
+      apiUrl: config.apiUrl,
+    });
+    this.perps = createPerps({
+      client,
+      addresses: this.addresses,
+      decimals,
+      markets: this.markets,
+      oracle: this.oracle,
+      risk: this.risk,
+      fees: this.fees,
+      funding: this.funding,
+    });
+    this.portfolio = createPortfolio({
+      client,
+      addresses: this.addresses,
+      vault: this.vault,
+      oracle: this.oracle,
+      apiUrl: config.apiUrl,
+    });
+    this.leaderboard = createLeaderboard(config.apiUrl);
+    this.credit = createCredit(client);
+    this.explorer = createExplorer(config.explorerUrl);
+    this.stream = createStream(config.apiUrl, config.webSocket);
+    this.institutional = createInstitutional(config.apiUrl);
+    this.trading = createTrading({ client, addresses: this.addresses, chainId: config.chainId, decimals, oracle: this.oracle });
+    this.subaccounts = createSubaccounts({ client, addresses: this.addresses, vault: this.vault, erc20: this.erc20, decimals });
+    this.crossMargin = createCrossMargin(client, this.addresses);
+    this.rfq = createRfq(client, this.addresses, config.chainId);
+    this.structured = createStructured({
+      options: this.options,
+      trading: this.trading,
+      oracle: this.oracle,
+      decimals: () => decimals(this.addresses.settlementToken),
+    });
+  }
+}

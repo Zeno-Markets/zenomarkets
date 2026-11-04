@@ -1,0 +1,21 @@
+{
+  "name": "@zeno/pricing",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Zeno offchain options analytics (premium, IV, Greeks) — display/quoting only, never settlement truth.",
+  "scripts": {
+    "build": "echo \"scaffold: services/pricing build — Phase 2\" && exit 0",
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "lint": "echo \"scaffold: services/pricing lint — Phase 2\" && exit 0",
+    "test": "tsx --test src/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@zeno/config": "workspace:*",
+    "@zeno/sdk": "workspace:*",
+    "fastify": "^5.1.0",
+    "viem": "^2.21.0"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "chainId": 46630,
+  "note": "Testnet limits, read by script/DeployCreditStack.s.sol. The settlement token is the ZENOMARKETS testnet USDG (6 decimals, public mint), so these caps carry no real money. Mainnet limits live in robinhood_mainnet.limits.json.",
+  "settlementTokenDecimals": 6,
+  "credit": {
+    "maxLtvBps": 6000,
+    "liquidationLtvBps": 7000,
+    "maxLeverageBps": 25000,
+    "supplyCap": 1000000000000000000000000,
+    "borrowCap": 1000000000000,
+    "oracleStalenessSeconds": 86400,
+    "note": "supplyCap is in TSLA base units (18 decimals): 1e24 = 1,000,000 TSLA. borrowCap is in USDG base units (6 decimals): 1e12 = 1,000,000 USDG. Staleness is 24 hours because the keeper moves the testnet price at any hour."
+  }
+}

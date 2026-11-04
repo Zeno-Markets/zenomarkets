@@ -1,0 +1,24 @@
+{
+  "name": "@zeno/api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Zeno REST + WebSocket API service.",
+  "scripts": {
+    "build": "echo \"scaffold: services/api build \u2014 Phase 2\" && exit 0",
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "lint": "echo \"scaffold: services/api lint \u2014 Phase 2\" && exit 0",
+    "test": "tsx --test src/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10",
+    "@fastify/websocket": "^11.0.0",
+    "@zeno/config": "workspace:*",
+    "@zeno/sdk": "workspace:*",
+    "fastify": "^5.1.0",
+    "postgres": "^3.4.0",
+    "viem": "^2.21.0"
+  }
+}

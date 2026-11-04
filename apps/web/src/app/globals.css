@@ -1,0 +1,535 @@
+@import "tailwindcss";
+@source "../../../../packages/ui/src";
+
+/* ZENOMARKETS tokens. Two themes on one set of names: light (default) lives in @theme, dark overrides the
+   same names under :root[data-theme="dark"], so no component is renamed. The brand is the logo's acid lime:
+   `accent` is the lime FILL (buttons, highlights) with near-black ink in both themes; `accent-fg` is lime
+   used as text or a line, which needs a deep olive on the light ground to stay readable (6.0:1 and up).
+   Every text colour clears 4.5:1 on ground, surface and raised in both themes. */
+@theme {
+  --radius-sharp: 2px;
+  --radius-control: 4px;
+  --radius-panel: 8px;
+  --radius-feature: 12px;
+  --radius-pill: 9999px;
+  --shadow-lift: 0 24px 48px -24px rgb(18 20 12 / 0.35);
+  --shadow-float: 0 12px 30px -8px rgb(18 20 12 / 0.22), 0 2px 8px rgb(18 20 12 / 0.08);
+  --shadow-up-glow: 0 0 20px color-mix(in srgb, var(--color-up) 25%, transparent);
+  --shadow-accent-glow: 0 0 28px color-mix(in srgb, var(--color-accent) 55%, transparent);
+  --shadow-down-glow: 0 0 20px color-mix(in srgb, var(--color-down) 25%, transparent);
+  /* Light: a warm concrete ground, panels step lighter toward paper white. */
+  --color-ground: #ebeae4;
+  --color-surface: #f4f3ee;
+  --color-raised: #fbfbf8;
+  --color-line: #d5d4cb;
+  --color-text: #12140c;
+  --color-muted: #53564a;
+  --color-faint: #62655a;
+  --color-up: #17703a;
+  --color-down: #b0301f;
+  --color-up-hover: #125c30;
+  --color-up-press: #0e4a26;
+  --color-down-hover: #962818;
+  --color-down-press: #7c2013;
+  --color-up-soft: color-mix(in srgb, var(--color-up) 12%, transparent);
+  --color-down-soft: color-mix(in srgb, var(--color-down) 12%, transparent);
+  --color-up-line: color-mix(in srgb, var(--color-up) 35%, transparent);
+  --color-down-line: color-mix(in srgb, var(--color-down) 35%, transparent);
+  --color-accent: #c8ef1f;
+  --color-accent-hover: #d6f84a;
+  --color-accent-press: #b2d80c;
+  --color-accent-ink: #0e1100;
+  --color-accent-fg: #4a5e00;
+  --color-accent-soft: color-mix(in srgb, #c8ef1f 26%, var(--color-raised));
+  --color-accent-line: color-mix(in srgb, var(--color-accent-fg) 45%, transparent);
+  /* The near-black of the logo's ground: dark bands on the light landing, and the PNL card. */
+  --color-ink: #0a0c05;
+  --color-candle-up: #11a85a;
+  --color-candle-down: #e0412f;
+  --color-gold: #8a6a00;
+  --color-ivory: #f4f3ee;
+  --color-charcoal: #12140c;
+  --color-card-accent: #4a5e00;
+  --color-card-loss: #7c2013;
+  /* Body and UI: Geist. Display: Geist set tight. Pixel: the landing's signature word marks.
+     Mono: addresses, contract names, technical captions. */
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-pixel: var(--font-pixelify), var(--font-geist-mono), ui-monospace, monospace;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --spacing: 0.21875rem;
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.75rem;
+  --text-title--letter-spacing: -0.02em;
+  --text-figure: 1.75rem;
+  --text-figure--line-height: 2rem;
+  --text-figure--letter-spacing: -0.035em;
+  --text-display: 3rem;
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.045em;
+}
+
+:root {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ground: #0a0c05;
+  --color-surface: #11140b;
+  --color-raised: #181c10;
+  --color-line: #2a2f1e;
+  --color-text: #eef2e2;
+  --color-muted: #a4a995;
+  --color-faint: #8d927e;
+  --color-up: #3fd98a;
+  --color-down: #ff6b5e;
+  --color-up-hover: #6ae6a6;
+  --color-up-press: #2bbf74;
+  --color-down-hover: #ff8a80;
+  --color-down-press: #e85448;
+  --color-accent: #d2f53a;
+  --color-accent-hover: #e0ff63;
+  --color-accent-press: #bde01f;
+  --color-accent-ink: #0b0d03;
+  --color-accent-fg: #d2f53a;
+  --color-accent-soft: color-mix(in srgb, #d2f53a 14%, var(--color-raised));
+  --color-candle-up: #22e07f;
+  --color-candle-down: #ff4b3e;
+  --color-gold: #f0c03a;
+  --shadow-lift: 0 24px 48px -24px rgb(0 0 0 / 0.8);
+  --shadow-float: 0 12px 30px -8px rgb(0 0 0 / 0.65), 0 2px 8px rgb(0 0 0 / 0.45);
+}
+
+html {
+  font-size: 16px;
+}
+
+html,
+body {
+  background: var(--color-ground);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* In the base layer so component utilities (e.g. `outline-none` on an input whose wrapper shows
+   the focus border instead) can override it. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-accent-fg);
+    outline-offset: 2px;
+  }
+
+  /* Tailwind's preflight resets buttons to the default cursor. Every enabled clickable element
+     shows the pointer; disabled controls keep `cursor-not-allowed` from their own utilities. A
+     non-semantic element with an `onClick` (a table row, say) needs `cursor-pointer` itself. */
+  button:not(:disabled),
+  a[href],
+  summary,
+  select:not(:disabled),
+  label[for],
+  input:where([type="checkbox"], [type="radio"], [type="submit"], [type="button"]):not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  [role="menuitem"],
+  [role="radio"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Phone width: every control is at least a 44 px target. `min-height` does nothing to an inline
+     link inside a sentence, so only controls and block or flex links grow. The skip link stays hidden. */
+  @media (max-width: 767px) {
+    button,
+    summary,
+    select,
+    [role="tab"],
+    [role="radio"],
+    input:not([type="checkbox"], [type="radio"], [type="hidden"]),
+    a[href]:not(.sr-only) {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+/* Markets ticker under the landing hero: two identical runs of items slide left by exactly one run, so
+   the loop has no seam. It stops while hovered or focused so a price can be read and a link clicked.
+   With reduced motion the animation collapses (see the reduced-motion block) and the first run shows. */
+@keyframes route-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.route-in {
+  /* `backwards`, not `both`: once the animation ends nothing stays applied, so the wrapper does not keep a
+     stacking context of its own (a finished `opacity` animation with fill-forwards would trap the
+     contracts drawer, which has to sit above the header). */
+  animation: route-in 0.16s ease-out backwards;
+}
+
+@keyframes ticker-run {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.ticker-track {
+  animation: ticker-run 70s linear infinite;
+  will-change: transform;
+}
+
+.ticker:hover .ticker-track,
+.ticker:focus-within .ticker-track {
+  animation-play-state: paused;
+}
+
+/* Navigation bar (app/loading.tsx): waits 150ms before appearing so a quick page change shows nothing. */
+@keyframes nav-progress-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nav-progress-run {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+@keyframes fill-pop {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fill-speck {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+  }
+}
+
+.fill-pop {
+  animation: fill-pop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.fill-speck {
+  animation: fill-speck 1s ease-out both;
+}
+
+.nav-progress {
+  animation: nav-progress-in 0.2s ease-out 0.15s both;
+}
+
+.nav-progress-bar {
+  animation: nav-progress-run 1.1s ease-in-out infinite;
+}
+
+/* How it works (docs/UI_CONTRACT.md Section 8): the demo cursor, the reward pop-up and its confetti. Under
+   reduced motion every duration collapses, and the confetti, which ends transparent, simply never shows. */
+@keyframes how-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes how-star {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-45deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.45) rotate(8deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes how-glow {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+}
+
+@keyframes how-confetti {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0) scale(0.4);
+  }
+  4% {
+    opacity: 1;
+  }
+  20% {
+    opacity: 1;
+    transform: translate(calc(var(--x) * 0.6), calc(var(--up) * -1)) rotate(calc(var(--r) * 0.3)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), var(--fall)) rotate(var(--r));
+  }
+}
+
+@keyframes how-ring {
+  50% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+@keyframes how-ripple {
+  from {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.4);
+  }
+}
+
+.how-pop {
+  animation: how-pop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.1) backwards;
+}
+
+.how-star {
+  animation: how-star 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards;
+}
+
+.how-glow {
+  animation: how-glow 1s ease-out 0.3s backwards;
+}
+
+.how-confetti {
+  animation: how-confetti 2.4s cubic-bezier(0.2, 0.6, 0.4, 1) both;
+}
+
+.how-ring {
+  box-shadow: 0 0 0 0 var(--color-accent-line);
+  animation: how-ring 1s ease-in-out infinite;
+}
+
+.how-ripple {
+  animation: how-ripple 0.5s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- ZENOMARKETS landing ---------- */
+
+/* Visible column lines behind light sections (the page's structural grid, after the reference's open grid). */
+.zeno-grid {
+  background-image: linear-gradient(to right, color-mix(in srgb, var(--color-line) 70%, transparent) 1px, transparent 1px);
+  background-size: calc(100% / 6) 100%;
+  background-position: center top;
+}
+@media (max-width: 767px) {
+  .zeno-grid {
+    background-size: calc(100% / 3) 100%;
+  }
+}
+.zeno-grid-dark {
+  background-image:
+    linear-gradient(to right, rgb(238 242 226 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(238 242 226 / 0.04) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+}
+
+/* Range input: a lime fill up to the thumb, a square thumb. */
+.zeno-range {
+  appearance: none;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+.zeno-range::-webkit-slider-runnable-track {
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-accent-fg) var(--fill), var(--color-line) var(--fill));
+}
+.zeno-range::-moz-range-track {
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-accent-fg) var(--fill), var(--color-line) var(--fill));
+}
+.zeno-range::-webkit-slider-thumb {
+  appearance: none;
+  margin-top: -7px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-accent);
+  border: 2px solid var(--color-ink);
+  transition: transform 150ms ease;
+}
+.zeno-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--color-accent);
+  border: 2px solid var(--color-ink);
+  border-radius: 0;
+}
+.zeno-range:active::-webkit-slider-thumb {
+  transform: scale(1.2);
+}
+
+/* Isometric module stack: six CSS cubes on a 3 x 2 lattice. */
+.iso-stage {
+  position: relative;
+  height: 250px;
+  max-width: 440px;
+}
+.iso-cube {
+  --s: 74px;
+  position: absolute;
+  width: calc(var(--s) * 1.732);
+  height: calc(var(--s) * 2);
+  left: calc(var(--c) * var(--s) * 1.76 + (1 - var(--r)) * var(--s) * 0.88);
+  top: calc(var(--r) * var(--s) * 1.04);
+  z-index: calc(var(--r) * 10 + var(--c));
+  transition: transform 350ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 350ms ease;
+}
+.iso-cube:hover,
+.iso-cube.is-on {
+  transform: translateY(-14px);
+  filter: drop-shadow(0 18px 18px rgb(10 12 5 / 0.25));
+}
+.iso-cube > span:not(.iso-label) {
+  position: absolute;
+  inset: 0;
+}
+.iso-top {
+  clip-path: polygon(50% 0, 100% 25%, 50% 50%, 0 25%);
+  background: var(--color-raised);
+  transition: background-color 300ms ease;
+}
+.iso-left {
+  clip-path: polygon(0 25%, 50% 50%, 50% 100%, 0 75%);
+  background: var(--color-ink);
+}
+.iso-right {
+  clip-path: polygon(50% 50%, 100% 25%, 100% 75%, 50% 100%);
+  background: color-mix(in srgb, var(--color-ink) 82%, var(--color-accent));
+}
+.iso-cube:hover .iso-top,
+.iso-cube.is-on .iso-top {
+  background: var(--color-accent);
+}
+.iso-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 18%;
+  text-align: center;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  pointer-events: none;
+}
+.iso-cube:hover .iso-label,
+.iso-cube.is-on .iso-label {
+  color: var(--color-accent-ink);
+}
+@media (max-width: 480px) {
+  .iso-cube {
+    --s: 56px;
+  }
+  .iso-stage {
+    height: 200px;
+  }
+}
+
+@keyframes zeno-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-14px) rotate(-3deg);
+  }
+}
+.zeno-float {
+  animation: zeno-float 6s ease-in-out infinite;
+}
+
+@keyframes intro-in {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+.intro-mark img {
+  animation: intro-in 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.intro-word {
+  animation: intro-in 900ms 250ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zeno-float,
+  .intro-mark img,
+  .intro-word {
+    animation: none;
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "name": "@zeno/web",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Zeno trading terminal (Next.js).",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev -p 3000",
+    "start": "next start -p ${PORT:-3000}",
+    "lint": "echo \"scaffold: apps/web lint — Phase 4\" && exit 0",
+    "test": "tsx --test src/lib/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "type": "module",
+  "dependencies": {
+    "@zeno/config": "workspace:*",
+    "@zeno/sdk": "workspace:*",
+    "@zeno/types": "workspace:*",
+    "@zeno/ui": "workspace:*",
+    "@next/env": "15.5.25",
+    "@tanstack/react-query": "^5",
+    "lightweight-charts": "^5",
+    "next": "^15",
+    "react": "^19",
+    "react-dom": "^19",
+    "three": "^0.186.1",
+    "viem": "^2.21",
+    "wagmi": "^2",
+    "zustand": "^5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/three": "^0.186.0",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4"
+  }
+}
