@@ -39,7 +39,7 @@ function CandleReadout({ candle, interval }: { candle: CandlePoint; interval: Ca
       <span>H {candle.high.toFixed(2)}</span>
       <span>L {candle.low.toFixed(2)}</span>
       <span>C {candle.close.toFixed(2)}</span>
-      <span>Vol ${fmtCompact(candle.volume)}</span>
+      {candle.volume > 0 ? <span>Vol ${fmtCompact(candle.volume)}</span> : null}
     </p>
   );
 }

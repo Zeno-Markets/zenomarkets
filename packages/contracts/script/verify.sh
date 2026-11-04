@@ -162,8 +162,9 @@ fi
 
 
 # ZenoUpgradePlaceholder: the first implementation every core proxy points at, before DeployAll repoints it.
-placeholder="$(jq -r '[.transactions[] | select(.contractName == "ZenoUpgradePlaceholder")][0].contractAddress // empty' \
-  "broadcast/DeployAll.s.sol/$(cast chain-id --rpc-url "$ROBINHOOD_TESTNET_RPC_URL")/run-latest.json" 2>/dev/null || true)"
+# The placeholder is recorded in packages/config (scripts/record-deployment.mjs), not in the deployment JSON.
+record="$(echo "${NETWORK_NAME:-robinhood_testnet}" | sed -E "s/_(.)/\\U\\1/g")Implementations"
+placeholder="$(grep -A40 "const $record" ../config/src/deployments.ts | grep -oE 'upgradePlaceholder: "0x[0-9a-fA-F]{40}"' | head -1 | grep -oE '0x[0-9a-fA-F]{40}' || true)"
 if [[ -n "$placeholder" ]]; then
   verify "$placeholder" src/proxy/ZenoUpgradePlaceholder.sol:ZenoUpgradePlaceholder
 fi
