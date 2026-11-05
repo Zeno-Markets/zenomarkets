@@ -10,6 +10,8 @@
 # Without --broadcast: checks the chain and the balance against today's gas price and dry-runs DeployAll; nothing is
 # sent. With --broadcast: asks the keystore password once (kept in a private temp file, deleted on exit), checks the
 # address, then sends. Safe to run again after a failure: a finished step is skipped.
+# REHEARSAL=1 MAINNET_RPC_URL=http://127.0.0.1:8545: the same run against an anvil fork of mainnet
+# (anvil --fork-url <mainnet> --chain-id 4663 --auto-impersonate), signed without the keystore.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 RPC="${MAINNET_RPC_URL:-https://rpc.mainnet.chain.robinhood.com}"
@@ -21,7 +23,9 @@ POOL=0x52e65b17fb6e5ba00ed806f37afcd2daa50271ca # Uniswap v3 WETH / USDG, 0.01%
 BUYBACK_SHARE_BPS="${BUYBACK_SHARE_BPS:-1000}"
 # Gas the whole run used on a mainnet fork (rehearsal 2026-11-06: 89.9M over 483 transactions), plus the swap and
 # the buyback calls. Robinhood Chain charges no L1 data component (NodeInterface.gasEstimateL1Component is 0).
+# After DeployAll (43.2M) only the markets, caps, pool and buyback remain: a resumed run needs that much.
 GAS_V1=91000000
+GAS_AFTER_STACK=48000000
 export NETWORK_NAME=robinhood_mainnet
 unset PRIVATE_KEY # every forge step signs with the keystore below, never a key from the environment
 
@@ -47,7 +51,7 @@ pool_funded() { $stack_live && [ "$(cast call "$(jq -r .vault "$DEPLOYED")" "poo
 usdg_held() { cast call "$USDG" "balanceOf(address)(uint256)" "$DEPLOYER" --rpc-url "$RPC" | awk '{print $1}'; }
 
 # ETH for the pool's USDG at the pool's price now, 2% over so MIN_OUT (the exact reserve) holds through the fill.
-sqrt="$(cast call "$POOL" "slot0()(uint160,int24,uint16,uint16,uint16,uint8,bool)" --rpc-url "$RPC" | head -1 | awk '{print $1}')"
+sqrt="$(cast call "$POOL" "slot0()(uint160,int24,uint16,uint16,uint16,uint8,bool)" --rpc-url "$RPC" | awk 'NR == 1 {print $1}')" # awk reads to the end: head would close the pipe and pipefail stop the run
 swap_wei=0
 if ! pool_funded && [ "$(usdg_held)" -lt "$RAW" ]; then
   swap_wei="$(node -e "console.log(((BigInt('$RAW') - BigInt('$(usdg_held)')) * 102n * (1n << 192n) / (100n * BigInt('$sqrt') ** 2n) + 1n).toString())")"
@@ -55,7 +59,8 @@ fi
 balance="$(cast balance "$DEPLOYER" --rpc-url "$RPC")"
 gas_price="$(cast gas-price --rpc-url "$RPC")"
 # 25% over today's gas price: a run that stops halfway leaves a stack nobody can use and the ETH spent.
-need="$(node -e "console.log((BigInt('$GAS_V1') * BigInt('$gas_price') * 125n / 100n + BigInt('$swap_wei')).toString())")"
+gas_left=$GAS_V1; $stack_live && gas_left=$GAS_AFTER_STACK
+need="$(node -e "console.log((BigInt('$gas_left') * BigInt('$gas_price') * 125n / 100n + BigInt('$swap_wei')).toString())")"
 echo "deployer   $DEPLOYER"
 echo "balance    $(cast from-wei "$balance") ETH, $(usdg_held) USDG base units"
 echo "gas price  $(cast from-wei "$gas_price" gwei) gwei"
@@ -73,20 +78,26 @@ if [ "${1:-}" != "--broadcast" ]; then
   exit 0
 fi
 
-PW="$(mktemp)"; chmod 600 "$PW"; trap 'rm -f "$PW"' EXIT
-read -rsp "Keystore password for 'deployer': " pass; echo
-printf '%s' "$pass" >"$PW"; unset pass
-ADDR="$(cast wallet address --keystore "$KEYSTORE" --password-file "$PW")"
-if [ "$(echo "$ADDR" | tr 'A-F' 'a-f')" != "$(echo "$DEPLOYER" | tr 'A-F' 'a-f')" ]; then
-  echo "STOP: keystore is $ADDR, expected $DEPLOYER. Nothing was sent."; exit 1
+if [ "${REHEARSAL:-}" = 1 ]; then
+  case "$RPC" in http://127.0.0.1:*|http://localhost:*) ;; *) echo "STOP: REHEARSAL=1 runs only against a local fork"; exit 1 ;; esac
+  COMMON=(--rpc-url "$RPC" --unlocked --sender "$DEPLOYER" --broadcast --slow)
+  SEND=(--rpc-url "$RPC" --unlocked --from "$DEPLOYER")
+else
+  PW="$(mktemp)"; chmod 600 "$PW"; trap 'rm -f "$PW"' EXIT
+  read -rsp "Keystore password for 'deployer': " pass; echo
+  printf '%s' "$pass" >"$PW"; unset pass
+  ADDR="$(cast wallet address --keystore "$KEYSTORE" --password-file "$PW")"
+  if [ "$(echo "$ADDR" | tr 'A-F' 'a-f')" != "$(echo "$DEPLOYER" | tr 'A-F' 'a-f')" ]; then
+    echo "STOP: keystore is $ADDR, expected $DEPLOYER. Nothing was sent."; exit 1
+  fi
+  echo "keystore ok"
+  COMMON=(--rpc-url "$RPC" --keystore "$KEYSTORE" --password-file "$PW" --sender "$DEPLOYER" --broadcast --slow)
+  SEND=(--rpc-url "$RPC" --keystore "$KEYSTORE" --password-file "$PW")
 fi
-echo "keystore ok"
-COMMON=(--rpc-url "$RPC" --keystore "$KEYSTORE" --password-file "$PW" --sender "$DEPLOYER" --broadcast --slow)
-SEND=(--rpc-url "$RPC" --keystore "$KEYSTORE" --password-file "$PW")
 
 echo "1/6  USDG for the pool"
 if [ "$swap_wei" = 0 ]; then echo "     held already"; else
-  SWAP_ETH_WEI="$swap_wei" MIN_OUT="$RAW" POOL="$POOL" WETH="$WETH" forge script script/SwapEthForUsdg.s.sol "${COMMON[@]}" | grep "USDG received" || true
+  SWAP_ETH_WEI="$swap_wei" MIN_OUT="$RAW" POOL="$POOL" WETH="$WETH" forge script script/SwapEthForUsdg.s.sol:SwapEthForUsdg "${COMMON[@]}" | grep "USDG received" || true
   [ "$(usdg_held)" -ge "$RAW" ] || { echo "STOP: the swap did not deliver $RAW USDG base units"; exit 1; }
 fi
 
@@ -98,13 +109,13 @@ fi
 echo "     vault $(jq -r .vault "$DEPLOYED")"
 
 echo "3/6  markets and launch caps"
-MAX_POSITION=1 OPEN_INTEREST_CAP=1 MAX_PRICE_AGE_HOURS=25 forge script script/AddMarketsMainnet.s.sol "${COMMON[@]}" >/dev/null
-forge script script/SetLaunchCaps.s.sol "${COMMON[@]}" >/dev/null
+MAX_POSITION=1 OPEN_INTEREST_CAP=1 MAX_PRICE_AGE_HOURS=25 forge script script/AddMarketsMainnet.s.sol:AddMarketsMainnet "${COMMON[@]}" >/dev/null
+forge script script/SetLaunchCaps.s.sol:SetLaunchCaps "${COMMON[@]}" >/dev/null
 echo "     $(cast call "$(jq -r .marketRegistry "$DEPLOYED")" "allMarketIds()(bytes32[])" --rpc-url "$RPC" | tr ',' '\n' | grep -c 0x) markets listed"
 
 echo "4/6  pool"
 if pool_funded; then echo "     funded already"; else
-  AMOUNT_RAW="$RAW" forge script script/FundPool.s.sol "${COMMON[@]}" | grep "Pool balance" || true
+  AMOUNT_RAW="$RAW" forge script script/FundPool.s.sol:FundPool "${COMMON[@]}" | grep "Pool balance" || true
 fi
 
 echo "5/6  buyback share"
@@ -115,7 +126,12 @@ FEE="$(jq -r .feeManager "$DEPLOYED")" BUYBACK="$(jq -r .buybackModule "$DEPLOYE
   cast send "$FEE" "setBuybackShare(uint256)" "$BUYBACK_SHARE_BPS" "${SEND[@]}" >/dev/null
 echo "     $BUYBACK_SHARE_BPS bps of each fee to $BUYBACK"
 
-echo "6/6  check and record"
-RPC_URL="$RPC" MAX_POSITION=1 MAX_OPEN_INTEREST=1 MAX_NET_OPEN_INTEREST=1 MAX_LEVERAGE=10 ./script/check-launch-limits.sh "$NETWORK_NAME" | tail -2
-cd "$ROOT" && node scripts/record-deployment.mjs "$NETWORK_NAME"
+echo "6/6  record and check"
+# Recorded first: the stack is on chain whatever the check says, and an unrecorded stack is one nobody can find.
+(cd "$ROOT" && RPC_URL="$RPC" node scripts/record-deployment.mjs "$NETWORK_NAME")
+if RPC_URL="$RPC" MAX_POSITION=1 MAX_OPEN_INTEREST=1 MAX_NET_OPEN_INTEREST=1 MAX_LEVERAGE=10 ./script/check-launch-limits.sh "$NETWORK_NAME" >/tmp/zeno-limits.log 2>&1; then
+  tail -2 /tmp/zeno-limits.log
+else
+  echo "WARNING: a launch limit check failed; do not open the site until it passes:"; grep -v "^ok" /tmp/zeno-limits.log | tail -8
+fi
 echo "done. Spent: $(cast from-wei "$(node -e "console.log((BigInt('$balance') - BigInt('$(cast balance "$DEPLOYER" --rpc-url "$RPC")')).toString())")") ETH"
