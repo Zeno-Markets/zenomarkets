@@ -135,13 +135,13 @@ export function Header() {
                 { href: "#roadmap", label: "Roadmap" },
               ].map((item) => (
                 <Link key={item.href} href={landing ? item.href : `/${item.href}`} className="group/nav inline-flex items-center gap-1.5 py-1 text-text/80 transition-colors duration-150 hover:text-text">
-                  <span aria-hidden className="size-2 rounded-[2px] border border-current transition-colors duration-200 group-hover/nav:border-accent-fg group-hover/nav:bg-accent" />
                   {item.label}
+                  <ArrowIcon className="size-2.5 opacity-60 transition duration-200 group-hover/nav:translate-x-0.5 group-hover/nav:-translate-y-0.5 group-hover/nav:opacity-100" />
                 </Link>
               ))}
               <Link href={NEWS_LINK.href} aria-current={news ? "page" : undefined} className={cn("group/nav inline-flex items-center gap-1.5 py-1 transition-colors duration-150 hover:text-text", news ? "text-text" : "text-text/80")}>
-                <span aria-hidden className={cn("size-2 rounded-[2px] border border-current transition-colors duration-200 group-hover/nav:border-accent-fg group-hover/nav:bg-accent", news && "border-accent-fg bg-accent")} />
                 {NEWS_LINK.label}
+                <ArrowIcon className={cn("size-2.5 transition duration-200 group-hover/nav:-translate-y-0.5 group-hover/nav:translate-x-0.5 group-hover/nav:opacity-100", news ? "opacity-100" : "opacity-60")} />
               </Link>
             </nav>
           ) : (
