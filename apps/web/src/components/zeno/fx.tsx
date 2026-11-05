@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import Lenis from "lenis";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /// Small pointer effects for the landing page. Each one answers a mouse only (a finger scrolling past should not tilt
@@ -94,6 +95,26 @@ export function LetterHover({ text, className = "", hover = "hover:text-accent" 
   );
 }
 
+/// The landing page's smooth scroll: wheel input on the page's scroll area (`#main`) eases toward its target instead
+/// of jumping a notch at a time. Touch keeps the device's own scrolling, nested scroll areas keep theirs, in-page
+/// anchors glide, and under reduced motion nothing is installed. `smooth.lenis` lets other parts scroll with it.
+export const smooth: { lenis: Lenis | null } = { lenis: null };
+
+export function useSmoothScroll() {
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    const wrapper = document.getElementById("main");
+    const content = wrapper?.firstElementChild;
+    if (reduced || !wrapper || !content) return;
+    const lenis = new Lenis({ wrapper, content, lerp: 0.09, wheelMultiplier: 0.9, anchors: true, allowNestedScroll: true, autoRaf: true });
+    smooth.lenis = lenis;
+    return () => {
+      lenis.destroy();
+      smooth.lenis = null;
+    };
+  }, [reduced]);
+}
+
 /// Dots down the right edge, one per landing section: the current one is lit, hovering one names it, pressing one
 /// scrolls there. Wide screens only, where the content leaves the edge free.
 export function SectionRail({ sections }: { sections: { id: string; label: string }[] }) {
@@ -124,7 +145,10 @@ export function SectionRail({ sections }: { sections: { id: string; label: strin
             aria-current={on ? "true" : undefined}
             onClick={(event) => {
               event.preventDefault();
-              document.getElementById(id)?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+              const el = document.getElementById(id);
+              if (!el) return;
+              if (smooth.lenis) smooth.lenis.scrollTo(el);
+              else el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
             }}
             className="group/rail relative flex size-5 items-center justify-center"
           >

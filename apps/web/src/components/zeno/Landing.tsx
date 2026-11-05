@@ -14,16 +14,16 @@ import { LISTED_CONTRACTS } from "@/lib/contracts";
 import { networkName } from "@/lib/network";
 import { X_URL } from "@/lib/social";
 import { CLASS_LABEL, CLASS_ORDER, useCardMarkets, useSparks, type AssetClass, type CardMarket } from "./data";
-import { LetterHover, Magnetic, SectionRail, Tilt, pointerVars, resetPointerVars } from "./fx";
+import { LetterHover, Magnetic, SectionRail, Tilt, pointerVars, resetPointerVars, useSmoothScroll } from "./fx";
 import { fmtPct, fmtUsd, HeroCarousel } from "./HeroCarousel";
-import { LogoOrb, OrbSlot, type OrbShape } from "./LogoOrb";
+import { LogoOrb, OrbSlot } from "./LogoOrb";
 import { LendingWidget, OptionsWidget, PerpWidget } from "./widgets";
 
 /// The landing page, laid out after an open, gridded reference: a rounded ink hero panel, white sections over
 /// six visible column lines, soft grey bands, pill buttons and a poster-weight condensed face for the big titles.
 /// The brand stays ZENOMARKETS lime on ink. The hero is short enough that the market card ring shows on the first
-/// screen. A 3D voxel logo (LogoOrb) travels down the page, docking into one `OrbSlot` per section and rebuilding
-/// itself into that section's shape; every section also answers the pointer in its own way.
+/// screen. A realistic 3D logo (LogoOrb) glides down the page from one `OrbSlot` to the next as it scrolls, and the
+/// page scrolls with eased inertia (useSmoothScroll); every section also answers the pointer in its own way.
 
 /* ---------- small pieces ---------- */
 
@@ -78,10 +78,10 @@ function Eyebrow({ children, className = "" }: { children: ReactNode; className?
 
 /// A centred section title. With `orb`, the section's docking box for the 3D logo sits beside it on wide screens and
 /// above it on narrow ones.
-function SectionHead({ eyebrow, title, children, orb }: { eyebrow?: string; title: ReactNode; children?: ReactNode; orb?: { shape: OrbShape; side: "left" | "right" } }) {
+function SectionHead({ eyebrow, title, children, orb }: { eyebrow?: string; title: ReactNode; children?: ReactNode; orb?: { side: "left" | "right" } }) {
   return (
     <div className="relative">
-      {orb ? <OrbSlot shape={orb.shape} className={`mx-auto mb-6 size-28 sm:size-32 xl:absolute xl:top-1/2 xl:mb-0 xl:size-48 xl:-translate-y-1/2 ${orb.side === "left" ? "xl:left-0" : "xl:right-0"}`} /> : null}
+      {orb ? <OrbSlot className={`mx-auto mb-6 size-28 sm:size-32 xl:absolute xl:top-1/2 xl:mb-0 xl:size-48 xl:-translate-y-1/2 ${orb.side === "left" ? "xl:left-0" : "xl:right-0"}`} /> : null}
       <div className="mx-auto max-w-3xl text-center">
         {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
         <h2 className="mt-3 text-balance font-display text-[2.1rem] font-medium leading-[1.1] tracking-[-0.03em] sm:text-[2.75rem]">{title}</h2>
@@ -224,7 +224,7 @@ function Hero({ markets }: { markets: CardMarket[] }) {
             className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover/hero:opacity-100"
             style={{ background: "radial-gradient(460px circle at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%), color-mix(in srgb, var(--color-lime) 13%, transparent), transparent 70%)" }}
           />
-          <OrbSlot shape="logo" className="absolute right-4 top-4 size-16 sm:right-6 sm:top-6 sm:size-20 lg:hidden" />
+          <OrbSlot className="absolute right-4 top-4 size-16 sm:right-6 sm:top-6 sm:size-20 lg:hidden" />
           <div className="relative grid px-6 pb-10 pt-6 sm:px-12 sm:pb-12 sm:pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(240px,0.5fr)] lg:gap-10 lg:px-[6%] lg:pt-12">
             <div>
               <LiveBadge markets={markets} />
@@ -249,7 +249,7 @@ function Hero({ markets }: { markets: CardMarket[] }) {
                 </Magnetic>
               </div>
             </div>
-            <OrbSlot shape="logo" className="hidden min-h-[280px] lg:block" />
+            <OrbSlot className="hidden min-h-[280px] lg:block" />
           </div>
         </div>
       </div>
@@ -370,7 +370,7 @@ function ProductTrio() {
     <section id="products" className="zeno-grid relative pb-20 sm:pb-28">
       <div className={FRAME}>
         <div className="mb-10 flex items-center gap-6 sm:mb-14 sm:gap-14">
-          <OrbSlot shape="cards" className="size-24 shrink-0 sm:size-36 lg:size-44" />
+          <OrbSlot className="size-24 shrink-0 sm:size-36 lg:size-44" />
           <div>
             <Eyebrow>Three products</Eyebrow>
             <h2 className="mt-3 max-w-2xl text-balance font-display text-[1.8rem] font-medium leading-[1.1] tracking-[-0.03em] sm:text-[2.6rem]">One margin account. Every way to move.</h2>
@@ -424,9 +424,8 @@ function Universe({ markets }: { markets: CardMarket[] }) {
   const counts = CLASS_ORDER.map((c) => [c, markets.filter((m) => m.assetClass === c).length] as const).filter(([, n]) => n > 0);
   const centre = (
     <div className="relative mx-auto aspect-square w-full max-w-[400px]">
-      <div aria-hidden className={`orb-hide absolute inset-0 bg-accent-fg ${OCTAGON}`} />
+      <div aria-hidden className={`absolute inset-0 bg-accent-fg ${OCTAGON}`} />
       <div aria-hidden className={`absolute inset-[3px] bg-ground ${OCTAGON}`} />
-      <OrbSlot shape="ring" fallback="" className="absolute inset-0" />
       <div className="relative flex size-full flex-col items-center justify-center px-12 text-center">
         <p className="text-balance font-display text-lg font-medium leading-snug tracking-[-0.02em] sm:text-[1.3rem]">Trade {markets.length} markets from one margin account.</p>
         <div className="mt-4 flex flex-wrap justify-center gap-1.5">
@@ -558,7 +557,7 @@ function OnchainStandard({ markets }: { markets: CardMarket[] }) {
   return (
     <section id="standard" className="relative bg-surface py-20 sm:py-28">
       <div className={FRAME}>
-        <SectionHead title="The onchain standard" orb={{ shape: "lattice", side: "right" }}>
+        <SectionHead title="The onchain standard" orb={{ side: "right" }}>
           Prices from Chainlink behind a staleness and deviation guard, margin in one vault, settlement by contracts anyone can read. Check every number yourself.
         </SectionHead>
         <div className="mt-16 grid gap-14 md:grid-cols-3">
@@ -630,7 +629,7 @@ function HandsOn({ markets }: { markets: CardMarket[] }) {
   return (
     <section id="try" className="zeno-grid relative py-20 sm:py-28">
       <div className={FRAME}>
-        <SectionHead eyebrow="One margin account" title="Trade it, hedge it, see it first" orb={{ shape: "candles", side: "left" }}>
+        <SectionHead eyebrow="One margin account" title="Trade it, hedge it, see it first" orb={{ side: "left" }}>
           Every product draws on the same USDG balance. Pick a market and try the numbers, priced live; nothing is signed.
         </SectionHead>
         <div className="mt-14 grid gap-10 lg:grid-cols-2">
@@ -722,7 +721,7 @@ function MarketsExplorer({ markets }: { markets: CardMarket[] }) {
   return (
     <section id="markets" className="zeno-grid relative py-20 sm:py-28">
       <div className={FRAME}>
-        <SectionHead title="Wall Street, the chain and the commodity pit" orb={{ shape: "wave", side: "right" }}>
+        <SectionHead title="Wall Street, the chain and the commodity pit" orb={{ side: "right" }}>
           Every market settles in USDG against one vault. Switch from Nvidia to Bitcoin to gold without moving funds, bridging or opening another app.
         </SectionHead>
         <div
@@ -805,7 +804,7 @@ function Roadmap() {
   return (
     <section id="roadmap" className="relative bg-surface py-20 sm:py-28">
       <div className={FRAME}>
-        <SectionHead eyebrow="Roadmap" title="Shipped in versions, each one on chain" orb={{ shape: "stairs", side: "left" }}>
+        <SectionHead eyebrow="Roadmap" title="Shipped in versions, each one on chain" orb={{ side: "left" }}>
           The testnet runs every feature today. Mainnet opens in stages, so each release can be checked before the next.
         </SectionHead>
       </div>
@@ -983,7 +982,7 @@ function Contracts() {
                 <p className="font-mono text-[12px] uppercase tracking-[0.1em]">Verified on chain</p>
                 <h2 className="mt-3 font-display text-[2.1rem] font-medium leading-[1.1] tracking-[-0.03em] sm:text-[2.6rem]">{LISTED_CONTRACTS.length} contracts. Every one on the explorer.</h2>
               </div>
-              <OrbSlot shape="modules" className="size-20 shrink-0 sm:size-28 lg:size-32" />
+              <OrbSlot className="size-20 shrink-0 sm:size-28 lg:size-32" />
             </div>
             <p className="mt-4 max-w-lg text-[15px] leading-relaxed">Six modules, each behind an ERC-1967 proxy. Hover a block to light up its contracts; open any address on Blockscout.</p>
             <div className="mt-6 flex flex-wrap gap-3">
@@ -1006,7 +1005,7 @@ function Contracts() {
                   </button>
                 </div>
               ) : null}
-              <ul className="max-h-80 divide-y divide-line overflow-y-auto border-t border-line">
+              <ul data-lenis-prevent className="max-h-80 divide-y divide-line overflow-y-auto border-t border-line">
                 {rows.length === 0 ? <li className="px-5 py-4 text-sm text-muted">No {pinned} contracts on this network yet.</li> : null}
                 {rows.map((row) => {
                   const url = explorerAddressUrl(env.explorerUrl, row.address);
@@ -1056,7 +1055,7 @@ function Closing({ markets }: { markets: CardMarket[] }) {
       <div className={`${FRAME} grid items-center gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]`}>
         <div className="relative flex justify-center">
           <div aria-hidden className="absolute left-1/2 top-1/2 size-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/40 blur-[90px]" />
-          <OrbSlot shape="logo" fallback="/zeno-glass.png" className="zeno-float relative size-56 sm:size-72" />
+          <OrbSlot fallback="/zeno-glass.png" className="zeno-float relative size-56 sm:size-72" />
         </div>
         <div className="flex flex-col gap-4">
           {actions.map((action) => {
@@ -1095,6 +1094,7 @@ function Closing({ markets }: { markets: CardMarket[] }) {
 
 export function Landing() {
   const markets = useCardMarkets();
+  useSmoothScroll();
   return (
     <>
       <Hero markets={markets} />
