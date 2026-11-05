@@ -76,6 +76,27 @@ const robinhoodTestnetAddresses: ContractAddresses = {
   creditPairTslaUsdg: "0xE18153B0cf1a98EE1EA8E067a3F5c38c00E2DDbd",
 };
 
+/// Mainnet, filled in by `node scripts/record-deployment.mjs robinhood_mainnet` after the V1.0 `DeployAll`
+/// (docs/RELEASES.md). Zero until then, and a zero stack is not recorded below, so mainnet has no deployment yet.
+const robinhoodMainnetAddresses: ContractAddresses = {
+  marketRegistry: "0x0000000000000000000000000000000000000000",
+  oracleRouter: "0x0000000000000000000000000000000000000000",
+  vault: "0x0000000000000000000000000000000000000000",
+  collateralManager: "0x0000000000000000000000000000000000000000",
+  feeManager: "0x0000000000000000000000000000000000000000",
+  buybackModule: "0x0000000000000000000000000000000000000000",
+  riskManager: "0x0000000000000000000000000000000000000000",
+  optionsEngine: "0x0000000000000000000000000000000000000000",
+  optionMarket: "0x0000000000000000000000000000000000000000",
+  optionPositionManager: "0x0000000000000000000000000000000000000000",
+  perpsEngine: "0x0000000000000000000000000000000000000000",
+  perpPositionManager: "0x0000000000000000000000000000000000000000",
+  liquidationEngine: "0x0000000000000000000000000000000000000000",
+  fundingManager: "0x0000000000000000000000000000000000000000",
+  priceValidator: "0x0000000000000000000000000000000000000000",
+  settlementToken: "0x0000000000000000000000000000000000000000",
+};
+
 /// The code behind each proxy of a chain's deployment, and the empty UUPS placeholder `DeployAll` also deploys.
 /// Every contract in the stack is an upgradeable proxy, so a reader who checks a contract on the explorer needs
 /// both addresses: the proxy that holds the state and the implementation that holds the code. The core stack
@@ -116,13 +137,23 @@ const robinhoodTestnetImplementations: ImplementationRecord = {
   upgradePlaceholder: "0x769d0D6e0DD40811f66bDdB66a2B40deA85A6F8E",
 };
 
+/// Filled in with `robinhoodMainnetAddresses` above, by the same command.
+const robinhoodMainnetImplementations: ImplementationRecord = {
+  implementations: {},
+};
+
+/// A stack is recorded once its vault has an address: the mainnet literals stay zero until V1.0 fills them.
+const isRecorded = (addresses: ContractAddresses) => !/^0x0{40}$/.test(addresses.vault);
+
 /// A network appears here once its stack is deployed. Mainnet joins at ZENOMARKETS V1.0.
 export const implementationRecords: Partial<Record<ChainId, ImplementationRecord>> = {
   [ROBINHOOD_TESTNET_CHAIN_ID]: robinhoodTestnetImplementations,
+  ...(isRecorded(robinhoodMainnetAddresses) ? { [ROBINHOOD_MAINNET_CHAIN_ID]: robinhoodMainnetImplementations } : {}),
 };
 
 export const deployments: Partial<Record<ChainId, ContractAddresses>> = {
   [ROBINHOOD_TESTNET_CHAIN_ID]: robinhoodTestnetAddresses,
+  ...(isRecorded(robinhoodMainnetAddresses) ? { [ROBINHOOD_MAINNET_CHAIN_ID]: robinhoodMainnetAddresses } : {}),
 };
 
 /// Whether `chainId` has a recorded deployment (the network switch only offers those).
@@ -171,6 +202,7 @@ export function resolveAddresses(
   return resolved;
 }
 
-/// The protocol token of a chain, once it launches (ZENOMARKETS V3.0). `ZenoBuybackModule` takes it through
-/// `setProtocolToken`. A web build may set it with `NEXT_PUBLIC_PROTOCOL_TOKEN_ADDRESS` and `_SYMBOL`.
+/// The protocol token of a chain, once it launches (ZENO, the same day as mainnet: ZENOMARKETS V1.0).
+/// `ZenoBuybackModule` takes it through `setProtocolToken`. A web build may set it with
+/// `NEXT_PUBLIC_PROTOCOL_TOKEN_ADDRESS` and `_SYMBOL` (deploy/vps-deploy.sh: zeno.env's `PROTOCOL_TOKEN_*`).
 export const protocolTokens: Partial<Record<ChainId, { address: Address; symbol: string }>> = {};

@@ -6,7 +6,7 @@ export const ROBINHOOD_TESTNET_CHAIN_ID = 46_630 as const;
 
 /// Robinhood Chain mainnet (docs.robinhood.com/chain, confirmed with `cast chain-id` on
 /// https://rpc.mainnet.chain.robinhood.com). The stack was deployed here on 2026-09-25, empty and
-/// unaudited; see docs/MAINNET_READINESS.md before pointing a public site at it.
+/// unaudited, and is not used: V1.0 deploys a fresh stack (docs/RELEASES.md).
 export const ROBINHOOD_MAINNET_CHAIN_ID = 4_663 as const;
 
 export type ChainId = typeof ROBINHOOD_TESTNET_CHAIN_ID | typeof ROBINHOOD_MAINNET_CHAIN_ID;

@@ -358,8 +358,9 @@ const PRODUCTS = [
     id: "lending",
     title: "Borrow against your stocks",
     copy: "Lock tokenized shares as collateral and draw USDG up to a fixed loan-to-value limit. Interest accrues per block, the shares stay yours.",
-    href: "/lending",
-    cta: "Open lending",
+    // Lending opens on mainnet with V2.0: until then the card points at the roadmap that says so.
+    href: env.lending ? "/lending" : "#roadmap",
+    cta: env.lending ? "Open lending" : "Coming in V2.0",
     art: <ArtLending />,
     tone: "bg-[linear-gradient(165deg,var(--color-paper)_0%,var(--color-accent)_95%)]",
   },
@@ -836,13 +837,16 @@ function Roadmap() {
           list.current?.classList.remove("dragging");
         }}
       >
-        {ROADMAP.map((step, i) => (
+        {ROADMAP.map((step, i) => {
+          // On a mainnet build the release it runs is live too (card i is release Vi.0).
+          const live = step.now || env.mainnetRelease === i;
+          return (
           <li key={step.tag} className={`group w-[280px] shrink-0 snap-start select-none overflow-hidden rounded-[16px] bg-raised shadow-card transition-[transform,box-shadow] duration-300 hover:-translate-y-1.5 hover:shadow-lift sm:w-[300px] ${overflow ? "cursor-grab" : ""}`}>
-            <div className={`theme-dark relative h-36 overflow-hidden ${step.now ? "bg-[linear-gradient(135deg,var(--color-ink)_30%,color-mix(in_srgb,var(--color-lime)_70%,var(--color-ink)))]" : "bg-ink"}`}>
+            <div className={`theme-dark relative h-36 overflow-hidden ${live ? "bg-[linear-gradient(135deg,var(--color-ink)_30%,color-mix(in_srgb,var(--color-lime)_70%,var(--color-ink)))]" : "bg-ink"}`}>
               <div aria-hidden className="zeno-grid-dark absolute inset-0 transition-transform duration-700 group-hover:scale-125" />
               <div className="relative flex h-full flex-col justify-between p-5">
                 <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-accent px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-accent-ink">{step.now ? "Live now" : `Step 0${i}`}</span>
+                  <span className="rounded-full bg-accent px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-accent-ink">{live ? "Live now" : `Step 0${i}`}</span>
                   <span className="font-mono text-[11px] text-muted">ZENOMARKETS</span>
                 </div>
                 <span className="origin-left font-condensed text-5xl font-extrabold uppercase italic text-paper transition-[transform,color] duration-300 group-hover:scale-110 group-hover:text-lime">{step.tag}</span>
@@ -860,7 +864,8 @@ function Roadmap() {
               </ul>
             </div>
           </li>
-        ))}
+          );
+        })}
       </ol>
       {overflow ? (
         <div className={`${FRAME} mt-6 flex items-center gap-4`}>

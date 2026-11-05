@@ -1,4 +1,4 @@
-import { addressesForChain, chains, protocolTokens, resolveChainId, ROBINHOOD_TESTNET_CHAIN_ID, type ChainId, type ContractAddresses } from "@zeno/config";
+import { addressesForChain, chains, isReleased, protocolTokens, releaseFor, resolveChainId, ROBINHOOD_TESTNET_CHAIN_ID, type ChainId, type ContractAddresses } from "@zeno/config";
 import type { Address } from "@zeno/types";
 import { pickProtocolToken } from "./protocolToken";
 import { storedChainId } from "./network";
@@ -48,7 +48,7 @@ const raw = {
   creditSymbol: process.env.NEXT_PUBLIC_CREDIT_SYMBOL,
   creditExampleMaxLtvBps: process.env.NEXT_PUBLIC_CREDIT_EXAMPLE_MAX_LTV_BPS,
   creditExampleLiquidationLtvBps: process.env.NEXT_PUBLIC_CREDIT_EXAMPLE_LIQ_LTV_BPS,
-  featureCopyTrading: process.env.NEXT_PUBLIC_FEATURE_COPY_TRADING,
+  release: process.env.NEXT_PUBLIC_RELEASE,
   vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
 };
 
@@ -76,6 +76,9 @@ const buildChainId: ChainId = resolveChainId(raw.chainId);
 const chainId: ChainId = storedChainId() ?? buildChainId;
 const isBuildChain = chainId === buildChainId;
 const testnet = chainId === ROBINHOOD_TESTNET_CHAIN_ID;
+/// The roadmap release this build runs (`@zeno/config` releases.ts). It follows the build's network, not the one
+/// picked in the browser, because the server decides which pages exist and only knows the build's.
+const release = releaseFor(buildChainId, raw.release);
 /// A per-network value wins; the single-network one applies only on the build's own network.
 const forThisNetwork = (testnetValue: string | undefined, mainnetValue: string | undefined, single: string | undefined) =>
   (testnet ? testnetValue : mainnetValue) || (isBuildChain ? single : undefined);
@@ -156,9 +159,15 @@ export const env = {
   limitOrders: Boolean(resolveAddresses().perpOrderManager),
   /// Cross margin needs a deployment that includes `ZenoCrossMarginManager`; the ticket hides it without one.
   crossMargin: Boolean(resolveAddresses().crossMargin),
-  /// The trader profile and copy flow routes (`/traders/...`). Off unless set to `true`; while on before
-  /// Phase 14 they are labelled shells with no data. The leaderboard's Copy action stays disabled either way.
-  copyTrading: raw.featureCopyTrading === "true",
+  /// The roadmap release this build runs: every one on a testnet build, `NEXT_PUBLIC_RELEASE` (default 1) on mainnet.
+  release,
+  /// Set on a mainnet build, where the roadmap marks this release as the one live now.
+  mainnetRelease: buildChainId === ROBINHOOD_TESTNET_CHAIN_ID ? undefined : release,
+  /// Features that open with a later release (V2.0, V3.0): their pages 404 and their links hide until then.
+  lending: isReleased("lending", release),
+  strategies: isReleased("strategies", release),
+  /// The trader profile and copy flow routes (`/traders/...`, `/copy`), V3.0.
+  copyTrading: isReleased("copyTrading", release),
   /// The public half of the Web Push key (the private half lives on the indexer). Without it the page offers in-app alerts only.
   vapidPublicKey: raw.vapidPublicKey?.trim() || undefined,
   /// The lending pair (Phase 9). The environment wins; otherwise the deployment record's `creditPairTslaUsdg`,

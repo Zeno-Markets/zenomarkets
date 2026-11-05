@@ -1,4 +1,4 @@
-import { requireEnv, resolveChainId } from "@zeno/config";
+import { isReleased, releaseFor, requireEnv, resolveChainId } from "@zeno/config";
 import { Zeno } from "@zeno/sdk";
 import websocket from "@fastify/websocket";
 import Fastify from "fastify";
@@ -27,6 +27,8 @@ export function buildServer() {
   const chainId = resolveChainId(process.env.CHAIN_ID);
   const rpcUrl = requireEnv("RPC_URL");
   const zeno = new Zeno({ chainId, transport: http(rpcUrl) });
+  // Routes for a feature from a later release are not served until this network runs it (`RELEASE`, mainnet only).
+  const release = releaseFor(chainId, process.env.RELEASE);
 
   const app = Fastify({ logger: true });
 
@@ -47,10 +49,10 @@ export function buildServer() {
     registerAdvancedRoutes(instance, zeno);
     registerAlertRoutes(instance);
     registerLeaderboardRoutes(instance, zeno);
-    registerCopyRoutes(instance, zeno);
-    registerCreditRoutes(instance, createPublicClient({ transport: http(rpcUrl) }), resolveCreditPair(zeno.addresses, process.env.CREDIT_PAIR_ADDRESS));
+    if (isReleased("copyTrading", release)) registerCopyRoutes(instance, zeno);
+    if (isReleased("lending", release)) registerCreditRoutes(instance, createPublicClient({ transport: http(rpcUrl) }), resolveCreditPair(zeno.addresses, process.env.CREDIT_PAIR_ADDRESS));
     registerTradeRoutes(instance, zeno);
-    registerRfqRoutes(instance, zeno);
+    if (isReleased("rfq", release)) registerRfqRoutes(instance, zeno);
     registerWebSocket(instance, zeno);
   });
 

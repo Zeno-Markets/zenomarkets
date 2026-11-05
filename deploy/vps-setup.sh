@@ -51,6 +51,8 @@ KEEPER_CREDIT_FEED=true
 KEEPER_INTERVAL_MS=20000
 INDEXER_MAX_BLOCK_RANGE=5000
 EOT
+  # Mainnet opens at V1.0; raising RELEASE (and redeploying) opens the next release. Testnet ignores it.
+  [ "$NET" = mainnet ] && echo "RELEASE=1" >>"$ENV"
   if [ -n "${KEY_SOURCE:-}" ] && [ -f "$KEY_SOURCE" ]; then
     key="$(grep -E '^KEEPER_PRIVATE_KEY=' "$KEY_SOURCE" | head -1 | cut -d= -f2-)"
     printf 'KEEPER_PRIVATE_KEY=%s\nQUOTER_PRIVATE_KEY=%s\n' "$key" "$key" >>"$ENV"; unset key

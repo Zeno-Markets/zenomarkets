@@ -9,7 +9,7 @@ import { MONO } from "@/lib/frame";
 
 type Props = { params: Promise<{ wallet: string }> };
 
-/// A trader's profile, behind `NEXT_PUBLIC_FEATURE_COPY_TRADING`: their ranking figures and a way to copy them.
+/// A trader's profile, V3.0 (`env.copyTrading`): their ranking figures and a way to copy them.
 export default async function Page({ params }: Props) {
   const { wallet } = await params;
   if (!env.copyTrading || !/^0x[0-9a-fA-F]{40}$/.test(wallet)) notFound();

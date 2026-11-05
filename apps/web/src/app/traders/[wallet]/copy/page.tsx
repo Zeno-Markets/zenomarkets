@@ -9,7 +9,7 @@ import { MONO } from "@/lib/frame";
 
 type Props = { params: Promise<{ wallet: string }> };
 
-/// The copy flow, behind `NEXT_PUBLIC_FEATURE_COPY_TRADING`.
+/// The copy flow, V3.0 (`env.copyTrading`).
 export default async function Page({ params }: Props) {
   const { wallet } = await params;
   if (!env.copyTrading || !/^0x[0-9a-fA-F]{40}$/.test(wallet)) notFound();

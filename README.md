@@ -5,7 +5,7 @@
 Stocks, ETFs, crypto and commodities. Perps, options, lending and borrowing on Robinhood Chain, from one margin account.
 
 - Testnet: <https://testnet.zenomarkets.tech> (Robinhood Chain Testnet, chain 46630)
-- Mainnet: <https://zenomarkets.tech> (Robinhood Chain, chain 4663) from ZENOMARKETS V1.0
+- Mainnet: <https://zenomarkets.tech> (Robinhood Chain, chain 4663) from ZENOMARKETS V1.0, opening in three releases: [docs/RELEASES.md](docs/RELEASES.md)
 - X: [@UseZenoMarkets](https://x.com/UseZenoMarkets)
 
 ## Products

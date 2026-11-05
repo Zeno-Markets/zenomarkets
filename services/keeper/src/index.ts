@@ -1,7 +1,7 @@
 import { loadDotEnv } from "@zeno/config";
 loadDotEnv();
 
-import { requireEnv, resolveAddresses, resolveChainId, ROBINHOOD_MAINNET_CHAIN_ID } from "@zeno/config";
+import { isReleased, releaseFor, requireEnv, resolveAddresses, resolveChainId, ROBINHOOD_MAINNET_CHAIN_ID } from "@zeno/config";
 import { Zeno } from "@zeno/sdk";
 import { createPublicClient, createWalletClient, http, stringToHex, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -36,8 +36,9 @@ const keeper = createKeeper({
 });
 
 /// Copy trading: mirrors leaders into followers' copy subaccounts. On whenever the keeper has a database, because
-/// the follows live there; the keeper's own account is the executor the follower authorises.
-const copy = process.env.DATABASE_URL
+/// the follows live there, and this network runs V3.0 (`RELEASE`); the keeper's own account is the executor the
+/// follower authorises.
+const copy = process.env.DATABASE_URL && isReleased("copyTrading", releaseFor(chainId, process.env.RELEASE))
   ? createCopyExecutor({
       zeno,
       publicClient: createPublicClient({ chain: chains[chainId], transport }),

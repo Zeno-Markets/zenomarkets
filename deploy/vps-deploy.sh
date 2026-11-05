@@ -22,6 +22,8 @@ as_zeno env DATABASE_URL="$DATABASE_URL" corepack pnpm --filter @zeno/indexer db
 as_zeno env DATABASE_URL="$DATABASE_URL" corepack pnpm --filter @zeno/risk-monitor db:migrate
 
 # The web build reads only NEXT_PUBLIC_* values: the network's public endpoints, nothing secret.
+# zeno.env's RELEASE (the roadmap release mainnet runs; testnet runs every one) and PROTOCOL_TOKEN_* (the ZENO
+# address shown as CA once PROTOCOL_TOKEN_LIVE=true) reach the build here: sudo drops the rest. See docs/RELEASES.md.
 case "$NET" in
   testnet) SITE=https://testnet.zenomarkets.tech RPC=https://rpc.testnet.chain.robinhood.com EXPLORER=https://explorer.testnet.chain.robinhood.com ;;
   mainnet) SITE=https://zenomarkets.tech RPC=https://rpc.mainnet.chain.robinhood.com EXPLORER=https://robinhoodchain.blockscout.com ;;
@@ -29,7 +31,9 @@ esac
 as_zeno env NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=--max-old-space-size=2048 \
   NEXT_PUBLIC_CHAIN_ID="$CHAIN_ID" NEXT_PUBLIC_SITE_URL="$SITE" NEXT_PUBLIC_API_URL="$SITE" \
   NEXT_PUBLIC_RPC_URL="$RPC" NEXT_PUBLIC_RPC_PROXY_URL="$SITE/v1/rpc" NEXT_PUBLIC_EXPLORER_URL="$EXPLORER" \
-  NEXT_PUBLIC_FEATURE_COPY_TRADING=true RELEASE_VERSION="${RELEASE_VERSION:-}" \
+  NEXT_PUBLIC_RELEASE="${RELEASE:-}" RELEASE_VERSION="${RELEASE_VERSION:-}" \
+  NEXT_PUBLIC_PROTOCOL_TOKEN_LIVE="${PROTOCOL_TOKEN_LIVE:-}" NEXT_PUBLIC_PROTOCOL_TOKEN_ADDRESS="${PROTOCOL_TOKEN_ADDRESS:-}" \
+  NEXT_PUBLIC_PROTOCOL_TOKEN_SYMBOL="${PROTOCOL_TOKEN_SYMBOL:-}" \
   corepack pnpm --filter @zeno/web build
 
 for svc in "${SERVICES[@]}"; do systemctl enable --quiet "zeno-$svc@$NET"; systemctl restart "zeno-$svc@$NET"; done
