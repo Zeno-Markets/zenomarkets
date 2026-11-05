@@ -3,7 +3,7 @@
 import { chip, cn } from "@zeno/ui";
 import { setTheme, useTheme } from "@/lib/theme";
 
-/// Switches between the light (default) and dark themes. The icon shows the theme a press moves to:
+/// Switches between the dark (default) and light themes. The icon shows the theme a press moves to:
 /// a moon in light, a sun in dark.
 export function ThemeToggle({ className }: { className?: string }) {
   const theme = useTheme();

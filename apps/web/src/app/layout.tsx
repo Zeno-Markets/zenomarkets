@@ -7,7 +7,7 @@ import { env } from "@/lib/env";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site";
 import { X_HANDLE } from "@/lib/social";
 import { THEME_SCRIPT } from "@/lib/theme-script";
-import { THEME_GROUND } from "@/lib/theme-colors";
+import { THEME_GROUND_DARK } from "@/lib/theme-colors";
 import { Providers } from "../providers";
 import "./globals.css";
 
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = { themeColor: THEME_GROUND };
+export const viewport: Viewport = { themeColor: THEME_GROUND_DARK };
 
 /// Open the connections to the chain RPC and the API while the page is still loading, so the first
 /// read does not also pay for DNS and TLS (about two seconds cold, against about 0.3 s warm).
@@ -55,8 +55,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     if (target) preconnect(target, { crossOrigin: "anonymous" });
   }
   return (
-    // The theme script sets data-theme before hydration, so React must not flag the attribute as a mismatch.
-    <html lang="en" suppressHydrationWarning className={`${geist.variable} ${pixel.variable} ${condensed.variable} ${geistMono.variable}`}>
+    // Dark by default. The theme script removes data-theme before hydration for a visitor who chose light, so React
+    // must not flag the attribute as a mismatch.
+    <html lang="en" data-theme="dark" suppressHydrationWarning className={`${geist.variable} ${pixel.variable} ${condensed.variable} ${geistMono.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>

@@ -3,8 +3,8 @@
 import { useSyncExternalStore } from "react";
 import { THEME_KEY } from "./theme-script";
 
-/// Light is the default for every visitor (docs/UI_CONTRACT.md Section 4). The OS preference is not
-/// consulted; a visitor's own choice is stored per device and applied as `data-theme` on `<html>`.
+/// Dark is the default for every visitor: the server renders `data-theme="dark"` on `<html>`. The OS preference is
+/// not consulted; a visitor's own choice is stored per device, and choosing light removes the attribute.
 export type Theme = "light" | "dark";
 
 
@@ -18,7 +18,7 @@ function subscribe(onChange: () => void) {
 
 /// The current theme. Canvas surfaces that read the tokens once (the price chart, the landing scene)
 /// key on it so they re-read them when the theme changes.
-export const useTheme = () => useSyncExternalStore<Theme>(subscribe, read, () => "light");
+export const useTheme = () => useSyncExternalStore<Theme>(subscribe, read, () => "dark");
 
 export function setTheme(theme: Theme) {
   if (theme === "dark") document.documentElement.dataset.theme = "dark";

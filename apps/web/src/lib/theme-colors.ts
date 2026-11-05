@@ -5,6 +5,8 @@
 /// (docs/UI_CONTRACT.md Section 4). If the palette moves, this is the one other place to update, and
 /// `scripts/check-hex.sh` allows hex literals only here.
 export const THEME_GROUND = "#ffffff";
+/// The dark theme's ground, the default theme: the browser chrome (`themeColor`) wears it.
+export const THEME_GROUND_DARK = "#0a0c05";
 export const THEME_TEXT = "#12140c";
 export const THEME_MUTED = "#53564a";
 
