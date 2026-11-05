@@ -18,7 +18,8 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
-    "testnet:verify": "node scripts/testnet-verify.mjs"
+    "testnet:verify": "node scripts/verify-contracts.mjs testnet",
+    "mainnet:verify": "node scripts/verify-contracts.mjs mainnet"
   },
   "dependencies": {
     "tsx": "^4.19.0"
