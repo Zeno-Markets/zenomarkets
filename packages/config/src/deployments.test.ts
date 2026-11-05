@@ -34,15 +34,15 @@ test("an optional contract (one added after older deployments) is a known overri
   assert.ok(OPTIONAL_CONTRACTS.includes("perpOrderManager"));
 });
 
-test("mainnet has no deployment until V1.0 and no protocol token is recorded yet", () => {
-  assert.equal(hasDeployment(ROBINHOOD_MAINNET_CHAIN_ID), false);
+test("mainnet is deployed from V1.0 on the real USDG, and no protocol token is recorded until ZENO launches", () => {
+  assert.equal(hasDeployment(ROBINHOOD_MAINNET_CHAIN_ID), true);
   assert.equal(hasDeployment(ROBINHOOD_TESTNET_CHAIN_ID), true);
-  assert.throws(() => addressesForChain(ROBINHOOD_MAINNET_CHAIN_ID));
+  assert.equal(addressesForChain(ROBINHOOD_MAINNET_CHAIN_ID).settlementToken, "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168");
   assert.deepEqual(protocolTokens, {});
 });
 
 test("the recorded implementations match the deployment files, and every one sits behind a recorded proxy", () => {
-  for (const [chainId, network] of [[ROBINHOOD_TESTNET_CHAIN_ID, "robinhood_testnet"]] as const) {
+  for (const [chainId, network] of [[ROBINHOOD_TESTNET_CHAIN_ID, "robinhood_testnet"], [ROBINHOOD_MAINNET_CHAIN_ID, "robinhood_mainnet"]] as const) {
     const file = JSON.parse(readFileSync(resolvePath(import.meta.dirname, `../../contracts/deployments/${network}.implementations.json`), "utf8")) as Record<string, string>;
     const record = implementationRecords[chainId]!;
     for (const [key, address] of Object.entries(file)) {

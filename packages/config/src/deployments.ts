@@ -79,22 +79,27 @@ const robinhoodTestnetAddresses: ContractAddresses = {
 /// Mainnet, filled in by `node scripts/record-deployment.mjs robinhood_mainnet` after the V1.0 `DeployAll`
 /// (docs/RELEASES.md). Zero until then, and a zero stack is not recorded below, so mainnet has no deployment yet.
 const robinhoodMainnetAddresses: ContractAddresses = {
-  marketRegistry: "0x0000000000000000000000000000000000000000",
-  oracleRouter: "0x0000000000000000000000000000000000000000",
-  vault: "0x0000000000000000000000000000000000000000",
-  collateralManager: "0x0000000000000000000000000000000000000000",
-  feeManager: "0x0000000000000000000000000000000000000000",
-  buybackModule: "0x0000000000000000000000000000000000000000",
-  riskManager: "0x0000000000000000000000000000000000000000",
-  optionsEngine: "0x0000000000000000000000000000000000000000",
-  optionMarket: "0x0000000000000000000000000000000000000000",
-  optionPositionManager: "0x0000000000000000000000000000000000000000",
-  perpsEngine: "0x0000000000000000000000000000000000000000",
-  perpPositionManager: "0x0000000000000000000000000000000000000000",
-  liquidationEngine: "0x0000000000000000000000000000000000000000",
-  fundingManager: "0x0000000000000000000000000000000000000000",
-  priceValidator: "0x0000000000000000000000000000000000000000",
-  settlementToken: "0x0000000000000000000000000000000000000000",
+  marketRegistry: "0xd728BCe3a3bAF160147D2A5456a5299DcFa8ADE7",
+  oracleRouter: "0xe87B0980cb36D4f1aAA46e77452DDbd09CEcDb68",
+  vault: "0x47CA1A365Db33f8B0949289437aD635bbFb8b70F",
+  collateralManager: "0x7D47f07b26fc40D2a87D95CfB2415d412f2FeEC5",
+  feeManager: "0x5B05191A243e6125f131A8B792674Dd92e9282Ce",
+  buybackModule: "0x30F4C9B5EA37d9b0c647654bD410206365725344",
+  riskManager: "0x9633f0A62aDe86764886dA87139e71D01fe2aE72",
+  optionsEngine: "0xA58fc1027E05A9eE7c2b60d9A22EeD4aed3860b5",
+  optionMarket: "0x88d4C1a40da70a9416Ca48198569d812C69730bE",
+  optionPositionManager: "0xfc1e89210720139612D137408B13B8721c622960",
+  perpsEngine: "0x7dF4000Ef3f272023DEd68E0c5eD96CF4216f6De",
+  perpPositionManager: "0xAEbd3A0098A82b3aC0d522e401C7aBe755DEDf21",
+  liquidationEngine: "0xAed63EB0EFE1839CD56596e5575B587808cb9011",
+  fundingManager: "0x6A88F7e5234Bf09e00B9221f56F329dd49949422",
+  priceValidator: "0x1abAd9cdD8F929898f3a392E55a8fdeaC510Ab33",
+  settlementToken: "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+  perpOrderManager: "0xD8293EB2Cb1f61aF63403b3Cf6Df58641bC2C303",
+  insuranceFund: "0x12FBe78ceE9bbBD74824726D6c0F3BB29C0f72d7",
+  crossMargin: "0xCe1a2e2844327A1882625d5C72CCfc0a48Df9F7A",
+  subaccountFactory: "0x0e630D147E8A9bCBCcE36ACDD43BF56A41bf3ffD",
+  rfqManager: "0x1e35eeA680CB2B0b1FA0455be168D3c1E4E694D9",
 };
 
 /// The code behind each proxy of a chain's deployment, and the empty UUPS placeholder `DeployAll` also deploys.
@@ -139,7 +144,29 @@ const robinhoodTestnetImplementations: ImplementationRecord = {
 
 /// Filled in with `robinhoodMainnetAddresses` above, by the same command.
 const robinhoodMainnetImplementations: ImplementationRecord = {
-  implementations: {},
+  implementations: {
+    buybackModule: "0xa921d67e2a994F20Cb5765C52D36FBaa13d53162",
+    collateralManager: "0x3f76ec1188A21dDd5B1F86A9887e9d964f85573c",
+    crossMargin: "0x20031081CE9d25C3AfF39eBc34a57a6fD7b80593",
+    feeManager: "0xd340777D83Cf2CC8DE0f253ffba4a3cDb5cbC76e",
+    fundingManager: "0x769d0D6e0DD40811f66bDdB66a2B40deA85A6F8E",
+    insuranceFund: "0x4Ff6f2C76dad406C649BDA30b781fd321B395b40",
+    liquidationEngine: "0x812d78fAb024FF32543f212eA4ada0C25cfd9e2B",
+    marketRegistry: "0xD7f062360Ed97424129fDFf805cF6e8562a3521f",
+    optionMarket: "0x06dBcADbF4FB7bbE2B2e160d1Cd026a004a00926",
+    optionPositionManager: "0x389fC6E94d898DfB1D5c375B7f065Eb36c86FA29",
+    optionsEngine: "0x29009e3c695774f5E3456727B60492a2Fbf0e3aE",
+    oracleRouter: "0xa8c04bfD23184F356b55CcA46379737154Ca6304",
+    perpOrderManager: "0x85d50080A2A84b37Fb2563feF1Ea5403c71E1B58",
+    perpPositionManager: "0xeA8F895FBFa3DdebD103A86cc50c9e43316F2851",
+    perpsEngine: "0x520dd861f9838D1f3a4737117828503891Ff173a",
+    priceValidator: "0x5C0f0c3EB0cd0be9030eE87554DAC92fBeb83cb5",
+    rfqManager: "0x94FA602D8406c372A34A56813AEd1aC2992A7EC6",
+    riskManager: "0x1b09aD9E472fd67B86fB20049942FbE1e3F780a1",
+    subaccountFactory: "0x1e86A6f583281b05899941E8b89a8F3622133E9A",
+    vault: "0x96e34D2E2Af6bBe96191136237455372182c95B7",
+  },
+  upgradePlaceholder: "0xC798A88474118c3B1a08C5d84189AcaBdFf472de",
 };
 
 /// A stack is recorded once its vault has an address: the mainnet literals stay zero until V1.0 fills them.
