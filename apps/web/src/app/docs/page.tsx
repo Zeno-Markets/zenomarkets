@@ -111,7 +111,7 @@ export default function Docs() {
 
                 <article className="min-w-0">
                     <header className="mb-16 max-w-[68ch] lg:mb-24">
-                        <h1 className="font-display text-[2.75rem] font-bold leading-[1.05] tracking-[-0.035em] text-text sm:text-[4rem]">
+                        <h1 className="font-condensed text-[3.25rem] font-bold uppercase leading-[0.92] text-text sm:text-[5rem]">
                             Documentation
                         </h1>
                         <p className={cn(bodyText, 'mt-5 text-xl')}>

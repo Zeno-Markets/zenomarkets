@@ -7,21 +7,22 @@
    used as text or a line, which needs a deep olive on the light ground to stay readable (6.0:1 and up).
    Every text colour clears 4.5:1 on ground, surface and raised in both themes. */
 @theme {
-  --radius-sharp: 2px;
-  --radius-control: 4px;
-  --radius-panel: 8px;
-  --radius-feature: 12px;
+  --radius-sharp: 4px;
+  --radius-control: 10px;
+  --radius-panel: 16px;
+  --radius-feature: 24px;
   --radius-pill: 9999px;
-  --shadow-lift: 0 24px 48px -24px rgb(18 20 12 / 0.35);
-  --shadow-float: 0 12px 30px -8px rgb(18 20 12 / 0.22), 0 2px 8px rgb(18 20 12 / 0.08);
+  --shadow-lift: 0 24px 48px -24px rgb(18 20 12 / 0.28);
+  --shadow-float: 0 12px 30px -8px rgb(18 20 12 / 0.16), 0 2px 8px rgb(18 20 12 / 0.06);
+  --shadow-card: 0 1px 2px rgb(18 20 12 / 0.04), 0 10px 30px -12px rgb(18 20 12 / 0.14);
   --shadow-up-glow: 0 0 20px color-mix(in srgb, var(--color-up) 25%, transparent);
   --shadow-accent-glow: 0 0 28px color-mix(in srgb, var(--color-accent) 55%, transparent);
   --shadow-down-glow: 0 0 20px color-mix(in srgb, var(--color-down) 25%, transparent);
-  /* Light: a warm concrete ground, panels step lighter toward paper white. */
-  --color-ground: #ebeae4;
-  --color-surface: #f4f3ee;
-  --color-raised: #fbfbf8;
-  --color-line: #d5d4cb;
+  /* Light: a paper-white ground with soft grey bands and panels, after the open, gridded reference layout. */
+  --color-ground: #ffffff;
+  --color-surface: #f2f2f0;
+  --color-raised: #ffffff;
+  --color-line: #e3e3de;
   --color-text: #12140c;
   --color-muted: #53564a;
   --color-faint: #62655a;
@@ -44,6 +45,11 @@
   --color-accent-line: color-mix(in srgb, var(--color-accent-fg) 45%, transparent);
   /* The near-black of the logo's ground: dark bands on the light landing, and the PNL card. */
   --color-ink: #0a0c05;
+  /* Fixed colours for type on the always-dark ink panels (hero, footer, charts), in both themes. */
+  --color-paper: #eef2e2;
+  --color-paper-muted: #a4a995;
+  --color-lime: #d2f53a;
+  --color-coral: #ff8a80;
   --color-candle-up: #11a85a;
   --color-candle-down: #e0412f;
   --color-gold: #8a6a00;
@@ -55,6 +61,8 @@
      Mono: addresses, contract names, technical captions. */
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  /* Condensed: the poster face of hero titles, card titles and the footer wordmark. Never for numbers in the terminal. */
+  --font-condensed: var(--font-barlow-condensed), "Arial Narrow", ui-sans-serif, sans-serif;
   --font-pixel: var(--font-pixelify), var(--font-geist-mono), ui-monospace, monospace;
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
   --spacing: 0.21875rem;
@@ -73,7 +81,9 @@
   color-scheme: light;
 }
 
-:root[data-theme="dark"] {
+/* `.theme-dark` scopes the dark tokens to one block (the footer, the hero panel) in either theme. */
+:root[data-theme="dark"],
+.theme-dark {
   color-scheme: dark;
   --color-ground: #0a0c05;
   --color-surface: #11140b;

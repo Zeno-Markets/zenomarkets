@@ -8,7 +8,7 @@ import { fmtUsd } from "./HeroCarousel";
 
 function Segmented<T extends string>({ value, options, onChange }: { value: T; options: { id: T; label: string }[]; onChange: (id: T) => void }) {
   return (
-    <div role="radiogroup" className="inline-flex rounded-control border border-line bg-surface p-0.5">
+    <div role="radiogroup" className="inline-flex rounded-full border border-line bg-surface p-1">
       {options.map((option) => (
         <button
           key={option.id}
@@ -16,7 +16,7 @@ function Segmented<T extends string>({ value, options, onChange }: { value: T; o
           role="radio"
           aria-checked={value === option.id}
           onClick={() => onChange(option.id)}
-          className={`rounded-[3px] px-3.5 py-1.5 font-mono text-xs uppercase tracking-[0.12em] transition-all duration-200 ${value === option.id ? "bg-ink text-[#eef2e2] shadow-[inset_0_-2px_0_var(--color-accent)]" : "text-muted hover:text-text"}`}
+          className={`rounded-full px-3.5 py-1.5 font-mono text-xs uppercase tracking-[0.12em] transition-all duration-200 ${value === option.id ? "bg-ink text-paper" : "text-muted hover:text-text"}`}
         >
           {option.label}
         </button>
@@ -116,8 +116,8 @@ function OutcomeChart({ from, to, fn, marks, spot, format }: { from: number; to:
         <line x1={x(at)} x2={x(at)} y1="0" y2={H} className="stroke-text/40" />
         <circle cx={x(at)} cy={y(value)} r="5" className="fill-accent stroke-ink" strokeWidth="2" />
       </svg>
-      <div className="pointer-events-none absolute right-0 top-0 rounded-control bg-ink px-2.5 py-1.5 font-mono text-[11px] text-[#eef2e2]">
-        at {fmtUsd(at)} · <span className={value >= 0 ? "text-[#d2f53a]" : "text-[#ff8a80]"}>{format(value)}</span>
+      <div className="pointer-events-none absolute right-0 top-0 rounded-control bg-ink px-2.5 py-1.5 font-mono text-[11px] text-paper">
+        at {fmtUsd(at)} · <span className={value >= 0 ? "text-lime" : "text-coral"}>{format(value)}</span>
       </div>
     </div>
   );
@@ -206,7 +206,7 @@ export function LendingWidget({ symbol, price, maxLtv = 60, liquidationLtv = 70 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="rounded-control bg-ink px-3 py-1.5 font-mono text-xs uppercase tracking-[0.12em] text-[#eef2e2]">
+        <span className="rounded-control bg-ink px-3 py-1.5 font-mono text-xs uppercase tracking-[0.12em] text-paper">
           {symbol} → USDG
         </span>
         <span className="font-mono text-xs text-muted">oracle {fmtUsd(price)}</span>

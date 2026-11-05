@@ -27,7 +27,7 @@ import { XIcon } from "./XIcon";
 const navLink = (current: boolean) =>
   cn(
     interactive,
-    "flex h-full items-center border-b-2 px-1 text-sm",
+    "flex h-full items-center border-b-2 px-1 font-mono text-[12px] uppercase tracking-[0.12em]",
     current ? "border-accent-fg text-accent-fg" : "border-transparent text-muted hover:text-text",
   );
 
@@ -84,7 +84,7 @@ function NavGroup({ label, items, pathname, open, onToggle, onClose }: { label: 
 /// The header keeps one accent-filled action, not two: Connect wallet is it (the actual next step
 /// for a new visitor), so Trade takes the same secondary chip look as the X icon next to it, rather
 /// than competing for the same colour.
-const tradeLink = cn(chip, CHIP_LABEL, "h-11 shrink-0 gap-2 px-4");
+const tradeLink = cn(chip, CHIP_LABEL, "h-10 shrink-0 gap-2 rounded-full! px-4");
 
 export function Header() {
   const pathname = usePathname();
@@ -116,11 +116,10 @@ export function Header() {
     <header
       ref={ref}
       className={cn(
-        "z-40 shrink-0 border-b border-line bg-ground/70 backdrop-blur-md",
-        landing ? "absolute inset-x-0 top-0" : "relative",
+        "relative z-40 shrink-0 border-b border-line bg-ground/85 backdrop-blur-md",
       )}
     >
-      <div className={cn("flex items-center justify-between gap-3", publicBar ? `h-[96px] ${LANDING_FRAME}` : `h-20 ${APP_GUTTER}`)}>
+      <div className={cn("flex items-center justify-between gap-3", publicBar ? `h-[72px] ${LANDING_FRAME}` : `h-16 ${APP_GUTTER}`)}>
         <div className="flex h-full items-center gap-6">
           <Link href="/" aria-label="ZENO home" className="flex h-full shrink-0 items-center">
             <Logo />
@@ -149,25 +148,26 @@ export function Header() {
             </nav>
           )}
         </div>
-        <div className="flex items-center gap-3 sm:gap-6">
-          {publicBar ? (
-            <nav aria-label="Landing" className="hidden items-center gap-7 font-mono text-[12px] uppercase tracking-[0.14em] xl:flex">
-              {[
-                { href: "#markets", label: "Markets" },
-                { href: "#products", label: "Products" },
-                { href: "#contracts", label: "Contracts" },
-                { href: "#roadmap", label: "Roadmap" },
-              ].map((item) => (
-                <Link key={item.href} href={landing ? item.href : `/${item.href}`} className="group/nav relative py-1 text-muted transition-colors duration-150 hover:text-text">
-                  {item.label}
-                  <span aria-hidden className="absolute inset-x-0 -bottom-0.5 h-[2px] origin-left scale-x-0 bg-accent transition-transform duration-300 group-hover/nav:scale-x-100" />
-                </Link>
-              ))}
-              <Link href={NEWS_LINK.href} aria-current={news ? "page" : undefined} className={cn("py-1 transition-colors duration-150 hover:text-text", news ? "text-text" : "text-muted")}>
-                {NEWS_LINK.label}
+        {publicBar ? (
+          <nav aria-label="Landing" className="hidden flex-1 items-center justify-center gap-6 font-mono 2xl:gap-8 text-[11px] uppercase tracking-[0.12em] xl:flex">
+            {[
+              { href: "#markets", label: "Markets" },
+              { href: "#products", label: "Products" },
+              { href: "#contracts", label: "Contracts" },
+              { href: "#roadmap", label: "Roadmap" },
+            ].map((item) => (
+              <Link key={item.href} href={landing ? item.href : `/${item.href}`} className="group/nav inline-flex items-center gap-1.5 py-1 text-text/80 transition-colors duration-150 hover:text-text">
+                <span aria-hidden className="size-2 rounded-[2px] border border-current transition-colors duration-200 group-hover/nav:border-accent-fg group-hover/nav:bg-accent" />
+                {item.label}
               </Link>
-            </nav>
-          ) : null}
+            ))}
+            <Link href={NEWS_LINK.href} aria-current={news ? "page" : undefined} className={cn("group/nav inline-flex items-center gap-1.5 py-1 transition-colors duration-150 hover:text-text", news ? "text-text" : "text-text/80")}>
+              <span aria-hidden className={cn("size-2 rounded-[2px] border border-current transition-colors duration-200 group-hover/nav:border-accent-fg group-hover/nav:bg-accent", news && "border-accent-fg bg-accent")} />
+              {NEWS_LINK.label}
+            </Link>
+          </nav>
+        ) : null}
+        <div className="flex items-center gap-3 sm:gap-4">
           <NetworkMenu />
           <NotificationBell />
           {/* Below xl the bar has no room beside the logo; the toggle moves into the menu sheet. */}
@@ -177,14 +177,14 @@ export function Header() {
             target="_blank"
             rel="noreferrer"
             aria-label="ZENO on X"
-            className={cn(chip, "size-11 shrink-0 justify-center rounded-control! max-xl:size-10 max-sm:hidden")}
+            className={cn(chip, "size-10 shrink-0 justify-center rounded-full! max-sm:hidden")}
           >
             <XIcon />
           </a>
           {/* On a phone the wallet button lives at the bottom of the menu, which leaves the bar to the logo, X and the menu button — Trade goes with it, since "Markets"/"Perpetuals" in the sheet already cover that entry point on mobile. */}
           <div className="hidden items-center gap-3 xl:flex 2xl:gap-6">
             {publicBar ? (
-              <Link href="/markets" className="group/app inline-flex h-11 items-center gap-2 bg-accent px-5 font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-accent-ink transition-shadow duration-200 hover:shadow-accent-glow active:scale-[0.98]">
+              <Link href="/markets" className="group/app inline-flex h-10 items-center gap-2 rounded-full bg-ink px-5 text-sm font-medium text-paper transition-[background-color,color,transform] duration-200 hover:bg-accent hover:text-accent-ink active:scale-[0.98]">
                 Launch app
                 <ArrowIcon />
               </Link>
@@ -202,7 +202,7 @@ export function Header() {
             aria-expanded={open}
             aria-controls="mobile-nav"
             onClick={() => setOpen((value) => !value)}
-            className={cn(chip, "relative size-10 justify-center rounded-control! xl:hidden")}
+            className={cn(chip, "relative size-10 justify-center rounded-full! xl:hidden")}
           >
             <MenuIcon open={open} />
             {/* A connected wallet is out of sight in the menu, so the button says so. */}
@@ -255,7 +255,7 @@ export function Header() {
           </div>
           <div className="flex gap-3 p-4 md:border-t md:border-line md:px-3 md:pb-1 md:pt-3">
             <div className="min-w-0 flex-1">
-              <WalletButton className="h-12! rounded-control! text-[13px]! uppercase tracking-[0.04em] md:h-10!" block menuAbove />
+              <WalletButton className="h-12! rounded-full! text-[13px]! md:h-10!" block menuAbove />
             </div>
             <ThemeToggle className="size-12! md:size-10!" />
           </div>

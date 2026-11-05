@@ -24,8 +24,8 @@ export function Button({ variant = "secondary", size = "md", className, type = "
     <button
       type={type}
       className={cn(
-        "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control font-medium transition-[background-color,border-color,color,box-shadow] duration-150 disabled:cursor-not-allowed",
-        size === "sm" ? "h-7 px-2.5 text-xs" : "h-10 px-4 text-sm",
+        "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-[background-color,border-color,color,box-shadow] duration-150 disabled:cursor-not-allowed",
+        size === "sm" ? "h-7 px-3 text-xs" : "h-10 px-5 text-sm",
         variants[variant],
         className,
       )}

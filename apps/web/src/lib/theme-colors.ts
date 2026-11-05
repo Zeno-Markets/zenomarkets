@@ -4,7 +4,7 @@
 /// stylesheet resolves. They mirror the light (default) theme in `globals.css`
 /// (docs/UI_CONTRACT.md Section 4). If the palette moves, this is the one other place to update, and
 /// `scripts/check-hex.sh` allows hex literals only here.
-export const THEME_GROUND = "#ebeae4";
+export const THEME_GROUND = "#ffffff";
 export const THEME_TEXT = "#12140c";
 export const THEME_MUTED = "#53564a";
 

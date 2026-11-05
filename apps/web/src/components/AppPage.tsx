@@ -10,8 +10,8 @@ import { PageHeader } from "./PageHeader";
 /// page itself.
 export function AppPage({ title, description, actions, children }: { title: string; description?: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex min-h-full w-full flex-col">
-      <div className={`mx-auto flex w-full max-w-[1920px] flex-1 flex-col py-4 lg:py-6 ${APP_GUTTER}`}>
+    <div className="zeno-grid flex min-h-full w-full flex-col">
+      <div className={`mx-auto flex w-full max-w-[1920px] flex-1 flex-col py-6 lg:py-10 ${APP_GUTTER}`}>
         <PageHeader title={title} actions={actions}>
           {description}
         </PageHeader>

@@ -12,7 +12,7 @@ export const chip =
 
 /// A pill in a row of choices (navigation, tabs). `selected` is the solid accent fill.
 export const pill = (selected: boolean) =>
-  `${interactive} inline-flex items-center rounded-control font-medium ${
+  `${interactive} inline-flex items-center rounded-full font-medium ${
     selected
       ? "bg-accent text-accent-ink"
       : "bg-raised text-muted hover:bg-accent-soft hover:text-accent-fg active:bg-accent active:text-accent-ink"

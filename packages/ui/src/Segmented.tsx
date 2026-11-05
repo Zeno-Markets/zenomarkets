@@ -22,14 +22,14 @@ export interface SegmentedProps<T extends string | number> {
 /// colour of what it would select: green for long, red for short, accent for everything else.
 const active = { up: "bg-up text-ground", down: "bg-down text-ground", neutral: "bg-accent text-accent-ink" };
 const idle = {
-  up: "bg-raised text-muted hover:bg-up-soft hover:text-up-hover active:bg-up active:text-ground",
-  down: "bg-raised text-muted hover:bg-down-soft hover:text-down-hover active:bg-down active:text-ground",
-  neutral: "bg-raised text-muted hover:bg-accent-soft hover:text-accent-fg active:bg-accent active:text-accent-ink",
+  up: "bg-transparent text-muted hover:bg-up-soft hover:text-up-hover active:bg-up active:text-ground",
+  down: "bg-transparent text-muted hover:bg-down-soft hover:text-down-hover active:bg-down active:text-ground",
+  neutral: "bg-transparent text-muted hover:bg-accent-soft hover:text-accent-fg active:bg-accent active:text-accent-ink",
 };
 
 export function Segmented<T extends string | number>({ options, value, onChange, label, activeTone, className, size = "md" }: SegmentedProps<T>) {
   return (
-    <div role="radiogroup" aria-label={label} className={cn("flex gap-px overflow-hidden rounded-md bg-line p-px", className)}>
+    <div role="radiogroup" aria-label={label} className={cn("flex gap-1 overflow-hidden rounded-full border border-line bg-surface p-1", className)}>
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -41,8 +41,8 @@ export function Segmented<T extends string | number>({ options, value, onChange,
             disabled={option.disabled}
             onClick={() => onChange(option.value)}
             className={cn(
-              size === "lg" ? "h-11" : "h-9",
-              "flex-1 px-2 text-sm font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:bg-surface disabled:text-faint",
+              size === "lg" ? "h-10" : "h-8",
+              "flex-1 rounded-full px-2 text-sm font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:bg-surface disabled:text-faint",
               selected ? active[activeTone?.(option.value) ?? "neutral"] : idle[activeTone?.(option.value) ?? "neutral"],
             )}
           >

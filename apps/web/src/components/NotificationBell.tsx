@@ -62,7 +62,7 @@ export function NotificationBell() {
         aria-expanded={open}
         aria-label={unread > 0 ? `Price alerts, ${unread} unread` : "Price alerts"}
         onClick={toggle}
-        className={cn(chip, "relative size-11 shrink-0 justify-center rounded-control! max-xl:size-10")}
+        className={cn(chip, "relative size-10 shrink-0 justify-center rounded-full!")}
       >
         <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="size-4">
           <path d="M5 8a5 5 0 0110 0c0 4 1.5 5.5 1.5 5.5h-13S5 12 5 8zM8.5 16.5a1.6 1.6 0 003 0" />

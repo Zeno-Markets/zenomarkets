@@ -24,7 +24,7 @@ export function NetworkMenu({ menuAbove = false }: { menuAbove?: boolean }) {
         aria-expanded={open}
         aria-label={`${networkName(env.chainId)}. Open the network menu.`}
         onClick={() => setOpen((value) => !value)}
-        className="flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-control border border-line bg-raised px-2.5 text-[10px] sm:px-3 sm:text-[11px] font-medium uppercase tracking-[0.1em] text-text transition-colors duration-150 hover:border-accent-fg hover:bg-accent-soft hover:text-accent-fg max-xl:h-10"
+        className="flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-line bg-raised px-2.5 text-[10px] sm:px-3 sm:text-[11px] font-medium uppercase tracking-[0.1em] text-text transition-colors duration-150 hover:border-accent-fg hover:bg-accent-soft hover:text-accent-fg"
       >
         <span aria-hidden="true" className="size-1.5 rounded-full bg-up" />
         {/* The full name needs more than a phone's bar has beside the logo, X and menu buttons. */}

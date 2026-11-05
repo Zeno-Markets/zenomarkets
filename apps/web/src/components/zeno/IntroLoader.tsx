@@ -122,7 +122,7 @@ export function IntroLoader() {
     <div
       role="status"
       aria-label="Loading ZENOMARKETS"
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-ink text-[#eef2e2] transition-[clip-path] duration-700 ease-[cubic-bezier(.76,0,.24,1)] ${phase === "leaving" ? "[clip-path:inset(0_0_100%_0)]" : "[clip-path:inset(0_0_0_0)]"}`}
+      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-ink text-paper transition-[clip-path] duration-700 ease-[cubic-bezier(.76,0,.24,1)] ${phase === "leaving" ? "[clip-path:inset(0_0_100%_0)]" : "[clip-path:inset(0_0_0_0)]"}`}
     >
       <canvas ref={canvas} aria-hidden className="absolute inset-0 h-full w-full" />
       <div className="relative flex flex-col items-center">
@@ -131,16 +131,16 @@ export function IntroLoader() {
           <img src="/zeno-glass.png" alt="" width={220} height={220} className="h-40 w-40 drop-shadow-[0_0_60px_rgba(210,245,58,0.45)] sm:h-52 sm:w-52" />
         </div>
         <p className="intro-word mt-6 font-display text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-          ZENO<span className="font-pixel font-medium text-[#d2f53a]">MARKETS</span>
+          ZENO<span className="font-pixel font-medium text-lime">MARKETS</span>
         </p>
-        <p className="mt-3 h-6 font-pixel text-sm tracking-[0.18em] text-[#a4a995]">
-          LOADING <span className="text-[#d2f53a]">{TAPE[tape % TAPE.length]}</span> · {TAPE[(tape + 3) % TAPE.length]} · {TAPE[(tape + 7) % TAPE.length]}
+        <p className="mt-3 h-6 font-pixel text-sm tracking-[0.18em] text-paper-muted">
+          LOADING <span className="text-lime">{TAPE[tape % TAPE.length]}</span> · {TAPE[(tape + 3) % TAPE.length]} · {TAPE[(tape + 7) % TAPE.length]}
         </p>
-        <div className="mt-6 h-[3px] w-56 overflow-hidden rounded-full bg-[#eef2e2]/10">
-          <div ref={bar} className="h-full w-full origin-left scale-x-[0.02] bg-[#d2f53a] shadow-[0_0_12px_#d2f53a]" />
+        <div className="mt-6 h-[3px] w-56 overflow-hidden rounded-full bg-paper/10">
+          <div ref={bar} className="h-full w-full origin-left scale-x-[0.02] bg-lime shadow-[0_0_12px_var(--color-lime)]" />
         </div>
       </div>
-      <p className="absolute bottom-8 font-mono text-[11px] uppercase tracking-[0.3em] text-[#a4a995]">One view. A world of markets.</p>
+      <p className="absolute bottom-8 font-mono text-[11px] uppercase tracking-[0.3em] text-paper-muted">One view. A world of markets.</p>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Pixelify_Sans } from "next/font/google";
+import { Barlow_Condensed, Geist, Geist_Mono, Pixelify_Sans } from "next/font/google";
 import { preconnect } from "react-dom";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/AppShell";
@@ -14,6 +14,7 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 // The pixel face carries the landing's signature words, never body copy or numbers in the terminal.
 const pixel = Pixelify_Sans({ subsets: ["latin"], weight: ["500", "700"], variable: "--font-pixelify", display: "swap" });
+const condensed = Barlow_Condensed({ subsets: ["latin"], weight: ["600", "700", "800"], style: ["normal", "italic"], variable: "--font-barlow-condensed", display: "swap" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -55,7 +56,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   }
   return (
     // The theme script sets data-theme before hydration, so React must not flag the attribute as a mismatch.
-    <html lang="en" suppressHydrationWarning className={`${geist.variable} ${pixel.variable} ${geistMono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${geist.variable} ${pixel.variable} ${condensed.variable} ${geistMono.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>

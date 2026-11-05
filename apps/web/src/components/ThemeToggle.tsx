@@ -13,7 +13,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       type="button"
       aria-label={`Switch to ${next} theme`}
       onClick={() => setTheme(next)}
-      className={cn(chip, "size-11 shrink-0 justify-center rounded-control! max-xl:size-10", className)}
+      className={cn(chip, "size-10 shrink-0 justify-center rounded-full!", className)}
     >
       <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className="size-4">
         {theme === "dark" ? (
