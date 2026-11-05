@@ -23,7 +23,8 @@ const YAHOO_INTERVALS: Record<CandleInterval, { interval: string; range: string 
   "1m": { interval: "1m", range: "7d" },
   "5m": { interval: "5m", range: "60d" },
   "15m": { interval: "15m", range: "60d" },
-  "1h": { interval: "60m", range: "730d" },
+  // "2y", not "730d": Yahoo answers 422 to "730d" for a ticker whose first trade predates the window (NBIS).
+  "1h": { interval: "60m", range: "2y" },
   "1d": { interval: "1d", range: "5y" },
 };
 
