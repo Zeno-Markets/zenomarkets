@@ -120,6 +120,12 @@ SIGN=(--rpc-url "$RPC" --account zeno-mainnet --sender "$DEPLOYER")
     #   PROTOCOL_TOKEN_LIVE=true   PROTOCOL_TOKEN_ADDRESS=0x...ZENO   PROTOCOL_TOKEN_SYMBOL=ZENO
     ```
 
+    Also add `KEEPER_REFRESH_FEEDS=false` (mainnet prices are Chainlink: the keeper has no feed of its own to keep
+    alive) and `INDEXER_START_BLOCK=<the block of the first DeployAll transaction>` (otherwise the indexer starts at
+    the chain head and misses the deployment). `vps-setup.sh` writes the Traefik route at once: park it
+    (`/data/coolify/proxy/dynamic/zeno-mainnet.yaml`) until step 8 has passed on the internal ports, then retire the
+    temporary apex redirect (`zeno-apex.yaml`) and put the mainnet route back. Done for V1.0 on 2026-11-06.
+
 8. **Ship** (repo root): commit the recorded deployment, move it to the `mainnet` branch, deploy.
 
     ```bash
