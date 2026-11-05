@@ -1005,7 +1005,7 @@ function Contracts() {
                   </button>
                 </div>
               ) : null}
-              <ul data-lenis-prevent className="max-h-80 divide-y divide-line overflow-y-auto border-t border-line">
+              <ul className="max-h-80 divide-y divide-line overflow-y-auto border-t border-line">
                 {rows.length === 0 ? <li className="px-5 py-4 text-sm text-muted">No {pinned} contracts on this network yet.</li> : null}
                 {rows.map((row) => {
                   const url = explorerAddressUrl(env.explorerUrl, row.address);
@@ -1094,11 +1094,10 @@ function Closing({ markets }: { markets: CardMarket[] }) {
 
 export function Landing() {
   const markets = useCardMarkets();
-  useSmoothScroll();
-  // One wrapper, because useSmoothScroll takes #main's first child as the content it measures: with a fragment that
-  // was the hero alone, so sections growing after load never raised the scroll limit and the page stuck short of the end.
+  const page = useRef<HTMLDivElement>(null);
+  useSmoothScroll(page);
   return (
-    <div>
+    <div ref={page}>
       <Hero markets={markets} />
       <ProductTrio />
       <Universe markets={markets} />

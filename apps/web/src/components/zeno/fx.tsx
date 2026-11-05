@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react";
 import Lenis from "lenis";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
@@ -98,13 +98,16 @@ export function LetterHover({ text, className = "", hover = "hover:text-accent" 
 /// The landing page's smooth scroll: wheel input on the page's scroll area (`#main`) eases toward its target instead
 /// of jumping a notch at a time. Touch keeps the device's own scrolling, nested scroll areas keep theirs, in-page
 /// anchors glide, and under reduced motion nothing is installed. `smooth.lenis` lets other parts scroll with it.
+/// `page` must be the element that holds the whole page: Lenis re-measures the scroll limit only when it resizes. Not
+/// #main's first child, which is the route template's full-height div (app/template.tsx) and never resizes, so the
+/// limit froze at its first measure and the page stopped short of its end once sections grew after load.
 export const smooth: { lenis: Lenis | null } = { lenis: null };
 
-export function useSmoothScroll() {
+export function useSmoothScroll(page: RefObject<HTMLElement | null>) {
   const reduced = useReducedMotion();
   useEffect(() => {
     const wrapper = document.getElementById("main");
-    const content = wrapper?.firstElementChild;
+    const content = page.current;
     if (reduced || !wrapper || !content) return;
     const lenis = new Lenis({ wrapper, content, lerp: 0.09, wheelMultiplier: 0.9, anchors: true, allowNestedScroll: true, autoRaf: true });
     smooth.lenis = lenis;
@@ -112,7 +115,7 @@ export function useSmoothScroll() {
       lenis.destroy();
       smooth.lenis = null;
     };
-  }, [reduced]);
+  }, [reduced, page]);
 }
 
 /// Dots down the right edge, one per landing section: the current one is lit, hovering one names it, pressing one
