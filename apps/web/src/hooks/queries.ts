@@ -52,6 +52,18 @@ export function usePerpMarket(symbol: string) {
   return useQuery(perpMarketQuery(symbol));
 }
 
+/// The ZENO token shown as "CA": the server's runtime value (set at launch without a rebuild), else the one baked
+/// into the build. Rechecked every minute, so a tab left open picks up the launch too.
+export function useProtocolToken() {
+  const { data } = useQuery({
+    queryKey: ["protocol-token"],
+    queryFn: async () => (await (await fetch("/api/protocol-token")).json()) as { chainId: number; token: { address: Address; symbol: string } | null },
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+  return (data?.chainId === env.chainId ? data.token : undefined) ?? env.protocolToken;
+}
+
 export function useSettlementDecimals() {
   return useQuery({
     queryKey: ["settlement-decimals"],

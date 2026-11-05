@@ -187,9 +187,9 @@ export default function Docs() {
                         </p>
                         <p className={bodyText}>
                             <strong className="font-medium text-text">Protocol token.</strong> The protocol token is
-                            not one of the trading contracts, and trading does not need it. It has not launched yet.
-                            When it does, its contract address will appear here and on the home page, and only
-                            there; check any address you are given against those two places:
+                            not one of the trading contracts, and trading does not need it. Once it launches, its
+                            contract address shows here and in the header and footer of every page, and nowhere
+                            else; check any address you are given against it:
                         </p>
                         <ContractAddressBadge />
                     </Section>

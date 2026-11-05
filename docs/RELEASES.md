@@ -120,6 +120,9 @@ SIGN=(--rpc-url "$RPC" --account zeno-mainnet --sender "$DEPLOYER")
     #   PROTOCOL_TOKEN_LIVE=true   PROTOCOL_TOKEN_ADDRESS=0x...ZENO   PROTOCOL_TOKEN_SYMBOL=ZENO
     ```
 
+    The token can also launch after the site is live: `bash /opt/zeno/mainnet/repo/deploy/vps-token.sh mainnet 0x...ZENO`
+    writes the same three lines, restarts only the web app and shows the CA in seconds, without a rebuild.
+
     Also add `KEEPER_REFRESH_FEEDS=false` (mainnet prices are Chainlink: the keeper has no feed of its own to keep
     alive) and `INDEXER_START_BLOCK=<the block of the first DeployAll transaction>` (otherwise the indexer starts at
     the chain head and misses the deployment). `vps-setup.sh` writes the Traefik route at once: park it

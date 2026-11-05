@@ -2,7 +2,7 @@
 
 import { cn } from '@zeno/ui';
 import { useState } from 'react';
-import { env } from '@/lib/env';
+import { useProtocolToken } from '@/hooks/queries';
 import { MONO } from '@/lib/frame';
 
 /// The ZENO token's contract address beside the logo, once it exists: shortened (the full address is in the hero
@@ -10,7 +10,7 @@ import { MONO } from '@/lib/frame';
 /// hero and the footer carry the full address there. Nothing renders before the token launches.
 export function HeaderCa() {
     const [copied, setCopied] = useState(false);
-    const address = env.protocolToken?.address;
+    const address = useProtocolToken()?.address;
     if (!address) return null;
     const short = `${address.slice(0, 6)}…${address.slice(-4)}`;
     return (

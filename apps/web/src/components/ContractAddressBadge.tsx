@@ -2,6 +2,7 @@
 
 import { cn } from '@zeno/ui';
 import { useState } from 'react';
+import { useProtocolToken } from '@/hooks/queries';
 import { env } from '@/lib/env';
 import { explorerAddressUrl } from '@/lib/explorer';
 import { MONO } from '@/lib/frame';
@@ -45,7 +46,7 @@ function CopyIcon({ copied }: { copied: boolean }) {
 /// there): a partial address isn't something a reader can actually verify against the explorer.
 export function ContractAddressBadge({ className }: { className?: string }) {
     const [copied, setCopied] = useState(false);
-    const token = env.protocolToken;
+    const token = useProtocolToken();
     const address = token?.address;
     const url = address
         ? explorerAddressUrl(env.explorerUrl, address)
