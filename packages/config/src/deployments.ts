@@ -100,6 +100,11 @@ const robinhoodMainnetAddresses: ContractAddresses = {
   crossMargin: "0xCe1a2e2844327A1882625d5C72CCfc0a48Df9F7A",
   subaccountFactory: "0x0e630D147E8A9bCBCcE36ACDD43BF56A41bf3ffD",
   rfqManager: "0x1e35eeA680CB2B0b1FA0455be168D3c1E4E694D9",
+  creditOracle: "0xEf9acbae2aAa3ED00A8F15Bc04E7723636E0C509",
+  creditRegistry: "0x9d08f569aA50899f3694ac4823AdA84f1aEd2a61",
+  creditRouter: "0x14c077595218619193B234aA88e662Db78c73a6b",
+  creditVault: "0x268e08fE25664B5ed2C782dAc77F76d3b6612784",
+  creditPairTslaUsdg: "0xbfB24E468fd1ec9006CBd7bA93eb5b25B8Cf922a",
 };
 
 /// The code behind each proxy of a chain's deployment, and the empty UUPS placeholder `DeployAll` also deploys.
@@ -147,6 +152,10 @@ const robinhoodMainnetImplementations: ImplementationRecord = {
   implementations: {
     buybackModule: "0xa921d67e2a994F20Cb5765C52D36FBaa13d53162",
     collateralManager: "0x3f76ec1188A21dDd5B1F86A9887e9d964f85573c",
+    creditPairTslaUsdg: "0x62eacCc64e44B9F16D6bfC16eF8BD75e471d389a",
+    creditRegistry: "0xf7daa9bf0E3D074a0939beFD454749c8d04c231f",
+    creditRouter: "0x6e59d5fB073318628AEa2Da973aEd9a7f2630133",
+    creditVault: "0x5Eaa14d6D57730B449C4B2BFfE9257e618609668",
     crossMargin: "0x20031081CE9d25C3AfF39eBc34a57a6fD7b80593",
     feeManager: "0xd340777D83Cf2CC8DE0f253ffba4a3cDb5cbC76e",
     fundingManager: "0x769d0D6e0DD40811f66bDdB66a2B40deA85A6F8E",

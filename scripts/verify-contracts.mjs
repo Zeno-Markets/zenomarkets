@@ -8,7 +8,7 @@
 //            source. Only the RPC is used, so nothing depends on the explorer. Ends with the live state of the venue.
 // Reads only public data: the deployment record in packages/contracts/deployments and public endpoints.
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import readline from "node:readline";
 
@@ -187,12 +187,14 @@ async function inspectOnExplorer(item) {
 /* ---------- mainnet: the source ---------- */
 const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"; // EIP-1967
 const artifacts = new Map();
+/// Every compilation of `name`: foundry.toml compiles src/credit/** (and what it pulls in) a second time with
+/// via_ir, as `<name>.credit-via-ir.json` beside `<name>.json` / `<name>.default.json`.
 function artifact(name) {
   if (!artifacts.has(name)) {
     const dir = resolve(CONTRACTS, `out/${name}.sol`);
-    const file = [`${name}.json`, `${name}.default.json`].map((f) => resolve(dir, f)).find(existsSync);
-    if (!file) throw new Error(`no compiled ${name} in packages/contracts/out`);
-    artifacts.set(name, JSON.parse(readFileSync(file, "utf8")).deployedBytecode);
+    const files = existsSync(dir) ? readdirSync(dir).filter((f) => f === `${name}.json` || (f.startsWith(`${name}.`) && f.endsWith(".json"))) : [];
+    if (!files.length) throw new Error(`no compiled ${name} in packages/contracts/out`);
+    artifacts.set(name, files.map((f) => JSON.parse(readFileSync(resolve(dir, f), "utf8")).deployedBytecode).filter((b) => b.object.length > 2));
   }
   return artifacts.get(name);
 }
@@ -203,7 +205,7 @@ function comparable(hex, { immutableReferences }) {
   for (const refs of Object.values(immutableReferences ?? {})) for (const { start, length } of refs) code.fill(0, start, start + length);
   return code.subarray(0, code.length - 2 - code.readUInt16BE(code.length - 2)).toString("hex");
 }
-const matches = (onChain, name) => onChain.length > 2 && comparable(onChain, artifact(name)) === comparable(artifact(name).object, artifact(name));
+const matches = (onChain, name) => onChain.length > 2 && artifact(name).some((a) => comparable(onChain, a) === comparable(a.object, a));
 
 async function inspectAgainstSource(item) {
   const code = await rpc("eth_getCode", [item.address, "latest"]);
@@ -328,6 +330,18 @@ async function liveState() {
     ["Trading pool", `${amount.toFixed(2)} ${name}`],
     ["Buyback", `${parseInt(word(share, 0), 16) / 100}% of every trading fee → ZenoBuybackModule`],
   ];
+  if (deployments.creditPairTslaUsdg) {
+    const pair = deployments.creditPairTslaUsdg;
+    const [supplied, borrowed, liquidity, paused] = await Promise.all([
+      call(pair, "0x8c3ae7b4"), // totalSupplyCollateral()
+      call(pair, "0x23b25d6d"), // totalBorrowedDebt()
+      call(token, `0x70a08231${pair.slice(2).toLowerCase().padStart(64, "0")}`), // balanceOf(pair)
+      call(deployments.creditVault, "0x60da3e83"), // depositsPaused()
+    ]);
+    const units = (hex, decimals) => (Number(BigInt(`0x${word(hex, 0)}`)) / 10 ** decimals).toFixed(decimals === 18 ? 4 : 2);
+    facts.push(["Lending", `TSLA/USDG · ${units(supplied, 18)} TSLA supplied · ${units(borrowed, 6)} ${name} borrowed · ${units(liquidity, 6)} ${name} to lend`]);
+    facts.push(["Lending vault", BigInt(`0x${word(paused, 0)}`) ? "deposits paused" : "deposits open"]);
+  }
   out(`   ${lime("▌")} ${bold(text("LIVE ON CHAIN"))}`);
   for (const [k, v] of facts) {
     out(`   ${muted(pad(k, 14))}${text(v)}`);
@@ -344,7 +358,8 @@ async function main() {
   const groups = choice.id === "all" ? GROUPS : GROUPS.filter((g) => g.id === choice.id);
   let items = [];
   for (const g of groups) {
-    for (const key of g.keys) if (deployments[key]) items.push({ group: g.title, name: NAMES[key][0], contract: NAMES[key][0], proxy: key !== "settlementToken", role: NAMES[key][1], address: deployments[key] });
+    // DeployCreditStack deploys the credit oracle directly (`new`), not behind a proxy.
+    for (const key of g.keys) if (deployments[key]) items.push({ group: g.title, name: NAMES[key][0], contract: NAMES[key][0], proxy: !["settlementToken", "creditOracle"].includes(key), role: NAMES[key][1], address: deployments[key] });
     if (g.markets) {
       process.stdout.write(`   ${faint("reading the market registry…")}`);
       items.push(...(await marketAssets()).map((r) => ({ ...r, group: g.title })));

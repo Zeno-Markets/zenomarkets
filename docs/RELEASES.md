@@ -144,6 +144,10 @@ SIGN=(--rpc-url "$RPC" --account zeno-mainnet --sender "$DEPLOYER")
 
 ## V2.0: capital
 
+Steps 1 to 3 run in one go from the repo root: `bash scripts/mainnet-v2.sh` (dry run), then `--broadcast`. It deploys
+the pair open (`CREDIT_PAUSED=false`), opens the lending vault's deposits, checks `MAKER_ROLE` and records the
+addresses. `pnpm mainnet:verify` then checks the lending contracts too.
+
 Open before V2.0: `HandOverAdmin.s.sol` does not move the lending stack's admin roles, so after step 1 below they
 stay with the deployer key. Decide how they move (extend the script, or grant and renounce by hand) before opening.
 
