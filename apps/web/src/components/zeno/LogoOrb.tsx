@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import mark from "@/assets/zeno-mark.png";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { THEME_LIME, THEME_LOGO_GLINT, THEME_LOGO_RIM } from "@/lib/theme-colors";
 import { MARK_OUTLINE } from "@/lib/zeno-mark-outline";
@@ -17,8 +16,9 @@ import { MARK_OUTLINE } from "@/lib/zeno-mark-outline";
 /// slot shows a flat fallback mark until the first frame draws; then `data-orb="on"` on <html> hides them (globals.css).
 
 /// An empty box the 3D logo docks into. Size and place it like an image; the logo fits its shorter side. `fallback` is
-/// the flat image shown until the 3D layer runs.
-export function OrbSlot({ className = "", fallback = mark.src }: { className?: string; fallback?: string }) {
+/// the flat image shown until the 3D layer runs. It is the transparent glass mark, not the app icon on its dark tile,
+/// so the logo never flashes a dark square while the 3D layer loads and the two cross-fade.
+export function OrbSlot({ className = "", fallback = "/zeno-glass.png" }: { className?: string; fallback?: string }) {
   return (
     <div data-orb-slot aria-hidden className={`pointer-events-none ${className}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}

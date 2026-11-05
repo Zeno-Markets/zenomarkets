@@ -1055,7 +1055,7 @@ function Closing({ markets }: { markets: CardMarket[] }) {
       <div className={`${FRAME} grid items-center gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]`}>
         <div className="relative flex justify-center">
           <div aria-hidden className="absolute left-1/2 top-1/2 size-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/40 blur-[90px]" />
-          <OrbSlot fallback="/zeno-glass.png" className="zeno-float relative size-56 sm:size-72" />
+          <OrbSlot className="zeno-float relative size-56 sm:size-72" />
         </div>
         <div className="flex flex-col gap-4">
           {actions.map((action) => {
@@ -1095,8 +1095,10 @@ function Closing({ markets }: { markets: CardMarket[] }) {
 export function Landing() {
   const markets = useCardMarkets();
   useSmoothScroll();
+  // One wrapper, because useSmoothScroll takes #main's first child as the content it measures: with a fragment that
+  // was the hero alone, so sections growing after load never raised the scroll limit and the page stuck short of the end.
   return (
-    <>
+    <div>
       <Hero markets={markets} />
       <ProductTrio />
       <Universe markets={markets} />
@@ -1110,6 +1112,6 @@ export function Landing() {
       <Footer />
       <SectionRail sections={RAIL} />
       <LogoOrb />
-    </>
+    </div>
   );
 }

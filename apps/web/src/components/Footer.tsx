@@ -11,7 +11,7 @@ import { StatusBadge } from './StatusBadge';
 import { XIcon } from './XIcon';
 
 /// The site map on an ink panel: the brand and the live network on the left, one column per navigation group on
-/// the right, and the wordmark set huge and cropped along the bottom edge. It wears the dark tokens in both themes.
+/// the right, under the wordmark set huge across the top. It wears the dark tokens in both themes.
 const footLink = cn(interactive, 'font-mono text-[11px] uppercase tracking-[0.12em] text-text/85 hover:text-accent-fg');
 const heading = 'font-mono text-[11px] uppercase tracking-[0.12em] text-faint';
 
@@ -25,7 +25,17 @@ export function Footer() {
     return (
         <footer className="theme-dark relative overflow-hidden bg-ink text-sm text-text">
             <div aria-hidden className="pointer-events-none absolute -left-40 -top-40 size-[520px] rounded-full bg-accent/10 blur-[120px]" />
-            <div className={`${LANDING_FRAME} relative grid gap-12 pb-10 pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]`}>
+            <p
+                aria-hidden
+                className="relative select-none pt-10 sm:pt-12 whitespace-nowrap text-center font-condensed text-[18.4vw] font-extrabold italic uppercase leading-[0.82] tracking-[-0.01em] text-paper"
+            >
+                {[...'Zenomarkets'].map((letter, i) => (
+                    <span key={i} className="inline-block transition-[transform,color] duration-500 ease-out hover:-translate-y-[0.06em] hover:-rotate-2 hover:text-lime">
+                        {letter}
+                    </span>
+                ))}
+            </p>
+            <div className={`${LANDING_FRAME} relative grid gap-12 pb-10 pt-10 sm:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]`}>
                 <div className="flex flex-col items-start gap-5">
                     <Logo size="sm" />
                     <p className="max-w-xs text-muted">One view. A world of markets. Stocks, ETFs, crypto and commodities on Robinhood Chain.</p>
@@ -64,16 +74,6 @@ export function Footer() {
                     </div>
                 </nav>
             </div>
-            <p
-                aria-hidden
-                className="relative -mb-[3.2vw] select-none whitespace-nowrap text-center font-condensed text-[18.4vw] font-extrabold italic uppercase leading-[0.82] tracking-[-0.01em] text-paper"
-            >
-                {[...'Zenomarkets'].map((letter, i) => (
-                    <span key={i} className="inline-block transition-[transform,color] duration-500 ease-out hover:-translate-y-[0.06em] hover:-rotate-2 hover:text-lime">
-                        {letter}
-                    </span>
-                ))}
-            </p>
         </footer>
     );
 }
