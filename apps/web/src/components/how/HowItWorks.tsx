@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { FEATURE_RELEASE, type ReleasedFeature } from "@zeno/config";
 import { env } from "@/lib/env";
 import { SPACED_CAPS } from "@/lib/frame";
 import { cn } from "@zeno/ui";
@@ -22,6 +23,9 @@ import { OrdersDemo, PerpDemo } from "./TradeDemos";
 /// A step's `acts` are what the cursor does for it; its `id` is what the demo reports when the visitor does it.
 
 const button = (re: RegExp) => ({ click: { text: re } });
+
+/// A chapter whose feature this build does not run yet says which release opens it.
+const soon = (feature: ReleasedFeature & keyof typeof env) => (env[feature] ? undefined : `Coming in V${FEATURE_RELEASE[feature]}.0`);
 
 const CHAPTERS: (ChapterDef & { Demo: () => React.JSX.Element })[] = [
   {
@@ -112,6 +116,7 @@ const CHAPTERS: (ChapterDef & { Demo: () => React.JSX.Element })[] = [
       { id: "drag", label: "Drag the expiry price", hint: "Drag the expiry price slider and watch the profit of the strategy move along its curve.", acts: [{ slide: { range: -1 }, to: 118 }] },
     ],
     href: env.strategies ? "/strategies" : undefined,
+    soon: soon("strategies"),
     linkLabel: "Open the strategy builder",
     Demo: StrategyDemo,
   },
@@ -126,6 +131,7 @@ const CHAPTERS: (ChapterDef & { Demo: () => React.JSX.Element })[] = [
       { id: "rescue", label: "Raise the price back to get safe again", hint: "Drag the price back up to $250, or repay part of the loan, until the health factor is above 1.20x.", acts: [{ slide: { range: 2 }, to: 250 }] },
     ],
     href: env.lending ? "/lending" : undefined,
+    soon: soon("lending"),
     linkLabel: "Open lending",
     Demo: LendingDemo,
   },
@@ -159,6 +165,7 @@ const CHAPTERS: (ChapterDef & { Demo: () => React.JSX.Element })[] = [
       { id: "stop", label: "Stop and withdraw", hint: "Press Stop and withdraw. The copy account closes and the money comes back to you.", acts: [button(/^Stop and withdraw$/)] },
     ],
     href: env.copyTrading ? "/copy" : undefined,
+    soon: soon("copyTrading"),
     linkLabel: "Open copy trading",
     Demo: CopyDemo,
   },

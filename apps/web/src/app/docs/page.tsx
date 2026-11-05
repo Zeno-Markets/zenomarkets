@@ -436,7 +436,8 @@ liquidated when health factor < 1`}</Formula>
                             <strong className="font-medium text-text">Limits of this design.</strong> The executor
                             enforces your limits, they are not written into the contract. A bug in the executor could
                             break a limit, but it cannot take money out. You can stop at any time and withdraw what is
-                            left. Copies can lag the trader by minutes. Copy trading is new and its limits are small.
+                            left. Copies can lag the trader by minutes. Copy trading is new and its limits are small. It opens on
+                            mainnet with V3.0.
                         </p>
                     </Section>
 

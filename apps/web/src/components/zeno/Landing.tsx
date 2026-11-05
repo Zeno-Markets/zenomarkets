@@ -12,6 +12,7 @@ import { env } from "@/lib/env";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { LISTED_CONTRACTS } from "@/lib/contracts";
 import { networkName } from "@/lib/network";
+import { PRODUCT_LINE } from "@/lib/site";
 import { X_URL } from "@/lib/social";
 import { CLASS_LABEL, CLASS_ORDER, useCardMarkets, useSparks, type AssetClass, type CardMarket } from "./data";
 import { LetterHover, Magnetic, SectionRail, Tilt, pointerVars, resetPointerVars, useSmoothScroll } from "./fx";
@@ -234,7 +235,7 @@ function Hero({ markets }: { markets: CardMarket[] }) {
                 <LetterHover text="A world of markets." className="block text-lime" hover="hover:text-paper" />
               </h1>
               <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-paper/85 sm:mt-6 sm:text-[17px]">
-                Stocks, ETFs, crypto and commodities. Perps, options, lending and borrowing on Robinhood Chain, from one margin account.
+                Stocks, ETFs, crypto and commodities. {PRODUCT_LINE} on Robinhood Chain, from one margin account.
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-8">
                 <Magnetic>
@@ -348,7 +349,8 @@ const PRODUCTS = [
   {
     id: "options",
     title: "Define the risk. Keep the upside",
-    copy: "Cash-settled calls and puts with a live chain, Greeks and a strategy builder for spreads and straddles. The premium is your max loss.",
+    // The strategy builder opens on mainnet with V2.0.
+    copy: `Cash-settled calls and puts with a live chain${env.strategies ? ", Greeks and a strategy builder for spreads and straddles" : " and Greeks on every strike"}. The premium is your max loss.`,
     href: "/options",
     cta: "Open options",
     art: <ArtOptions />,
@@ -646,7 +648,7 @@ function HandsOn({ markets }: { markets: CardMarket[] }) {
           />
           <TryCard
             tag="Options"
-            copy="Pick a strike and see the payoff at expiry. Weekly and monthly expiries, Greeks on every strike and a strategy builder, settled in USDG."
+            copy={`Pick a strike and see the payoff at expiry. Weekly and monthly expiries, Greeks on every strike${env.strategies ? " and a strategy builder" : ""}, settled in USDG.`}
             href="/options"
             cta="Learn about options"
             tone="bg-[linear-gradient(135deg,var(--color-ink),color-mix(in_srgb,var(--color-lime)_35%,var(--color-ink)))]"
@@ -1085,7 +1087,7 @@ function Closing({ markets }: { markets: CardMarket[] }) {
               </Link>
             );
           })}
-          {lend && sparks ? (
+          {env.lending && lend && sparks ? (
             <details className="group rounded-[22px] bg-raised">
               <summary className="flex h-20 cursor-pointer list-none items-center justify-between px-6 font-display text-2xl font-medium tracking-[-0.02em] sm:h-24 sm:text-3xl">
                 Try a stock-backed loan

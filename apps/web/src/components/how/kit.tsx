@@ -36,6 +36,8 @@ export interface ChapterDef {
   steps: Step[];
   href?: string;
   linkLabel: string;
+  /// Shown in place of the link while the feature waits for a later mainnet release ("Coming in V2.0").
+  soon?: string;
 }
 
 // ---------------------------------------------------------------- progress

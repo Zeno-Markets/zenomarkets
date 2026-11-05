@@ -186,6 +186,8 @@ export function Chapter({ def, index, total, Demo, prev, next, onSelect }: { def
               {def.linkLabel}
               <ArrowIcon className="size-3 transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
             </Link>
+          ) : def.soon ? (
+            <p className="flex h-11 items-center rounded-control border border-line bg-surface px-3 text-sm text-muted">{def.soon}</p>
           ) : null}
         </div>
       </header>
