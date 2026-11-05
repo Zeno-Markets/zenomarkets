@@ -92,17 +92,15 @@ contract PerpsHandler is BaseTest {
         }
     }
 
-    /// @return ledger Available balance of every tracked account plus margin locked in open positions.
+    /// @return ledger Ledger balance of every tracked account. Margin locked in open positions is part of it,
+    /// so it is not added again: a position past its margin awaiting liquidation has locked more than the
+    /// balance left, and counting the locked margin separately would owe more than the vault is owed.
     /// @return tokens Settlement token the vault actually holds.
     function solvency() external view returns (uint256 ledger, uint256 tokens) {
         address token = address(usdc);
-        ledger = vault.availableBalance(keeper, token) + vault.availableBalance(address(insuranceFund), token);
+        ledger = collateralManager.balanceOf(keeper, token) + collateralManager.balanceOf(address(insuranceFund), token);
         for (uint256 a; a < actors.length; a++) {
-            ledger += vault.availableBalance(actors[a], token);
-        }
-        for (uint256 i; i < positionIds.length; i++) {
-            ZenoPerpPositionManager.PerpPosition memory pos = perpPositionManager.getPosition(positionIds[i]);
-            if (pos.open) ledger += pos.collateral;
+            ledger += collateralManager.balanceOf(actors[a], token);
         }
         tokens = usdc.balanceOf(address(vault));
     }
@@ -155,7 +153,7 @@ contract PerpsInvariantTest is StdInvariant, Test {
         assertEq(handler.malformedOpenPositions(), 0, "open position with zero size or margin");
     }
 
-    /// Solvency: the token the vault holds covers every tracked ledger balance plus locked margin, however
+    /// Solvency: the token the vault holds covers every tracked ledger balance (locked margin included), however
     /// the profits and losses fall. The vault refuses a profit credit that the pool cannot pay
     /// (`InsufficientPoolReserves`), which is what keeps this true.
     function invariant_vaultTokensCoverLedger() public view {
