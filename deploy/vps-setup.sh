@@ -15,6 +15,7 @@ case "$NET" in
 esac
 REPO_URL=https://github.com/Zeno-Markets/zenomarkets.git
 BASE=/opt/zeno/$NET
+ROUTE_DIR="${ROUTE_DIR:-/data/coolify/proxy/dynamic}"
 BIND=172.16.0.1 # docker0: the Coolify proxy reaches the host through host.docker.internal
 
 id zeno >/dev/null 2>&1 || useradd --system --create-home --shell /usr/sbin/nologin zeno
@@ -104,12 +105,40 @@ EOT
 printf 'WEB_HOST=%s\nWEB_PORT=%s\n' "$BIND" "$WEB_PORT" >"$BASE/web.env"
 systemctl daemon-reload
 
+# Mainnet's www host redirects to the apex, path kept. Served as its own site it broke every read: the API (/v1)
+# lives on the apex only, so the browser blocked www's calls to it (CORS) and the page said "Could not read markets".
+WWW_ROUTERS="" WWW_MIDDLEWARE=""
+if [ "$NET" = mainnet ]; then
+  WWW_ROUTERS=$(cat <<'EOT'
+    zeno-mainnet-www-http:
+      rule: Host(`www.zenomarkets.tech`)
+      entryPoints: [http]
+      middlewares: [zeno-mainnet-www]
+      service: zeno-mainnet-web
+    zeno-mainnet-www:
+      rule: Host(`www.zenomarkets.tech`)
+      entryPoints: [https]
+      middlewares: [zeno-mainnet-www]
+      service: zeno-mainnet-web
+      tls:
+        certResolver: letsencrypt
+EOT
+)
+  WWW_MIDDLEWARE=$(cat <<'EOT'
+    zeno-mainnet-www:
+      redirectRegex:
+        regex: '^https?://www\.zenomarkets\.tech/(.*)'
+        replacement: 'https://zenomarkets.tech/${1}'
+        permanent: true
+EOT
+)
+fi
 # Traefik route: /v1 goes to the API, everything else to the web app. One file per network.
-cat >"/data/coolify/proxy/dynamic/zeno-$NET.yaml" <<EOT
+cat >"$ROUTE_DIR/zeno-$NET.yaml" <<EOT
 http:
   routers:
     zeno-$NET-http:
-      rule: Host(\`$HOST_NAME\`)$( [ "$NET" = mainnet ] && printf ' || Host(`www.zenomarkets.tech`)' )
+      rule: Host(\`$HOST_NAME\`)
       entryPoints: [http]
       middlewares: [zeno-$NET-https]
       service: zeno-$NET-web
@@ -121,16 +150,18 @@ http:
       tls:
         certResolver: letsencrypt
     zeno-$NET-web:
-      rule: Host(\`$HOST_NAME\`)$( [ "$NET" = mainnet ] && printf ' || Host(`www.zenomarkets.tech`)' )
+      rule: Host(\`$HOST_NAME\`)
       entryPoints: [https]
       service: zeno-$NET-web
       tls:
         certResolver: letsencrypt
+$WWW_ROUTERS
   middlewares:
     zeno-$NET-https:
       redirectScheme:
         scheme: https
         permanent: true
+$WWW_MIDDLEWARE
   services:
     zeno-$NET-web:
       loadBalancer:

@@ -10,11 +10,11 @@
     "note": "maxNetOpenInterest x 39 markets (35 equities, ETFs and commodities plus BTC, ETH, LINK, GLD) x a 50% one-sided move is 1,950,000, which the 2,000,000 pool reserve covers - the arithmetic check-launch-limits.sh runs with MAX_MOVE_BPS=5000. The position cap equals the net open-interest cap so a first trader can open a full position, and the per-market open-interest cap is 4x it so matched two-sided flow has room. Halved 2026-11-06 for the V1.0 open: the pool is 2 USDG swapped from the deployer's ETH (scripts/mainnet-v1.sh)."
   },
   "session": {
-    "openSecond": 48600,
-    "closeSecond": 73800,
+    "openSecond": 52200,
+    "closeSecond": 77400,
     "daysMask": 31,
     "preOpenGraceSeconds": 5400,
-    "note": "The US equity session, in UTC seconds from midnight: 13:30 to 20:30, Monday to Friday (daysMask bit 0 is Monday). The close is 30 minutes after the 20:00 UTC cash close so that an option expiring at 20:00 can still have its settlement price recorded inside the session. preOpenGrace lets a price stamped up to 90 minutes before the open count as this session's: measured, the first in-session print landed up to 39 minutes after the open, and SPY's last pre-open print an hour before it. THIS WINDOW IS UTC AND US DST MOVES IT: re-run SetLaunchCaps.s.sol on 2026-11-01, when the session becomes 14:30 to 21:30 UTC (openSecond 52200, closeSecond 77400)."
+    "note": "The US equity session in winter (EST), in UTC seconds from midnight: 14:30 to 21:30, Monday to Friday (daysMask bit 0 is Monday). The close is 30 minutes after the 20:00 UTC cash close so that an option expiring at 20:00 can still have its settlement price recorded inside the session. preOpenGrace lets a price stamped up to 90 minutes before the open count as this session's: measured, the first in-session print landed up to 39 minutes after the open, and SPY's last pre-open print an hour before it. THIS WINDOW IS UTC AND US DST MOVES IT: set to winter on 2026-11-06 (V1.0 had gone live with the summer 13:30 to 20:30, which shut the chain 30 minutes before the 21:00 UTC cash close). Back to summer (openSecond 48600, closeSecond 73800) and re-run SetLaunchCaps.s.sol on 2027-03-14."
   },
   "staleness": {
     "defaultSeconds": 32400,

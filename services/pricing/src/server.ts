@@ -122,7 +122,9 @@ function randomNonce(): bigint {
 export function buildServer(options: PricingOptions = {}) {
   const chainId = resolveChainId(process.env.CHAIN_ID);
   const zeno =
-    options.zeno ?? new Zeno({ chainId, transport: http(requireEnv("RPC_URL")) });
+    // 3 s x 3 attempts: an upstream call that hangs is retried and still answers inside the API's 10 s pricing timeout
+    // (viem's default, 10 s x 4, outlived it and the trader saw a 504).
+    options.zeno ?? new Zeno({ chainId, transport: http(requireEnv("RPC_URL"), { timeout: 3_000, retryCount: 2 }) });
   const positionRetryDelayMs = options.positionRetryDelayMs ?? 1_000;
   const account = options.account ?? quoterFromEnv();
   const now = options.now ?? Date.now;
