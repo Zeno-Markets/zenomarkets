@@ -23,8 +23,9 @@ export const THEME_CARD_RULE = "#d0cec9";
 export const THEME_CARD_SHADE = "#e7e5df";
 
 /// The landing page's 3D logo (components/zeno/LogoOrb.tsx) is lit in WebGL, outside Tailwind's reach, and looks the
-/// same in both themes. Lime and paper mirror `--color-lime` and `--color-paper` in globals.css; olive is the brand
-/// lime darkened, the sheen along the glass edges.
+/// same in both themes. The three logo colours are sampled from the mark itself (src/assets/zeno-mark.png): the olive
+/// of the glass body, the lime of its edges and bevels, and the cream of its glints.
 export const THEME_LIME = "#d2f53a";
-export const THEME_OLIVE = "#6f8a0b";
-export const THEME_PAPER = "#eef2e2";
+export const THEME_LOGO_BODY = "#4f6c00";
+export const THEME_LOGO_RIM = "#d8f000";
+export const THEME_LOGO_GLINT = "#fcfacf";
