@@ -770,14 +770,14 @@ function MarketsExplorer({ markets }: { markets: CardMarket[] }) {
 
 const ROADMAP = [
   { tag: "Testnet", title: "Every feature, live", items: ["Perps, options, RFQ", "Lending & borrowing", "Copy trading, leaderboard, PnL cards", "21 markets across four asset classes"], now: true },
-  // ZENO launches the same day as mainnet, so it belongs to V1.0, not a later release.
+  // Every release is a share of what the testnet already runs. ZENO launches the same day as mainnet, so it is V1.0.
   {
     tag: "V1.0",
     title: "Mainnet and ZENO, same day",
-    items: ["Perpetuals and options on mainnet", "Stocks, ETFs, crypto, commodities", "ZENO token live, its address on every page", "A share of every trading fee set aside for ZENO buybacks", "Portfolio, leaderboard, PnL cards"],
+    items: ["Perpetuals and options", "Stocks, ETFs, crypto, commodities", "ZENO token live, its address on every page", "A share of every trading fee set aside for ZENO buybacks", "Portfolio, activity, alerts, leaderboard, PnL cards"],
   },
-  { tag: "V2.0", title: "Capital", items: ["Stock-backed USDG loans", "Subaccounts", "Copy trading", "RFQ block trades", "First ZENO buybacks from the fees set aside"] },
-  { tag: "V3.0", title: "ZENO at the centre", items: ["Lower trading fees for ZENO holders", "Stake ZENO to back the insurance fund", "ZENO holders vote on new markets"] },
+  { tag: "V2.0", title: "Capital", items: ["Lend USDG", "Borrow USDG against stocks", "Options strategy builder", "RFQ block trades"] },
+  { tag: "V3.0", title: "Social", items: ["Copy trading", "Trader profiles", "Subaccounts"] },
 ];
 
 /// The roadmap cards scroll sideways when they do not fit: drag them with a mouse, use the arrows, and a bar shows
@@ -810,7 +810,7 @@ function Roadmap() {
     <section id="roadmap" className="relative bg-surface py-20 sm:py-28">
       <div className={FRAME}>
         <SectionHead eyebrow="Roadmap" title="Shipped in versions, each one on chain" orb={{ side: "left" }}>
-          The testnet runs every feature today. V1.0 opens mainnet the day ZENO launches; each later release adds to both, checked before the next.
+          The testnet runs every feature today. V1.0 opens mainnet the day ZENO launches; the rest follows in stages, each checked before the next.
         </SectionHead>
       </div>
       <ol
