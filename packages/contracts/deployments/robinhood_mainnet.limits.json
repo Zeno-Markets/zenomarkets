@@ -3,11 +3,11 @@
   "note": "Launch caps and session-aware staleness limits for chain 4663, applied by script/SetLaunchCaps.s.sol and checked by script/check-launch-limits.sh. Every amount is in SETTLEMENT TOKEN BASE UNITS (USDG, 6 decimals), not whole tokens. Without an audit these caps are the primary loss bound (DEVELOPMENT_PHASES.md Phase 4), and they are sized against the balance that exists rather than a hoped-for one. Raise them in one place, here, once mainnet is stable and the treasury is funded. Re-sized 2026-10-10 for the mainnet open: about 5.3 USDG bought with the launch budget, 4.00 of it in the pool.",
   "settlementTokenDecimals": 6,
   "caps": {
-    "maxPositionRaw": 200000,
-    "openInterestCapRaw": 800000,
-    "maxNetOpenInterestRaw": 200000,
-    "poolReserveRaw": 4000000,
-    "note": "maxNetOpenInterest x 39 markets (35 equities, ETFs and commodities plus BTC, ETH, LINK, GLD) x a 50% one-sided move is 3,900,000, which the 4,000,000 pool reserve covers - the arithmetic check-launch-limits.sh runs with MAX_MOVE_BPS=5000. The position cap equals the net open-interest cap so a first trader can open a full position, and the per-market open-interest cap is 4x it so matched two-sided flow has room. The rest of the USDG stays in the owner wallet for the canary trades."
+    "maxPositionRaw": 100000,
+    "openInterestCapRaw": 400000,
+    "maxNetOpenInterestRaw": 100000,
+    "poolReserveRaw": 2000000,
+    "note": "maxNetOpenInterest x 39 markets (35 equities, ETFs and commodities plus BTC, ETH, LINK, GLD) x a 50% one-sided move is 1,950,000, which the 2,000,000 pool reserve covers - the arithmetic check-launch-limits.sh runs with MAX_MOVE_BPS=5000. The position cap equals the net open-interest cap so a first trader can open a full position, and the per-market open-interest cap is 4x it so matched two-sided flow has room. Halved 2026-11-06 for the V1.0 open: the pool is 2 USDG swapped from the deployer's ETH (scripts/mainnet-v1.sh)."
   },
   "session": {
     "openSecond": 48600,
