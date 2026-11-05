@@ -130,8 +130,9 @@ export function IntroLoader() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/zeno-glass.png" alt="" width={220} height={220} className="h-40 w-40 drop-shadow-[0_0_60px_rgba(210,245,58,0.45)] sm:h-52 sm:w-52" />
         </div>
-        <p className="intro-word mt-6 font-display text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-          ZENO<span className="font-pixel font-medium text-lime">MARKETS</span>
+        <p className="intro-word mt-7 flex items-baseline gap-[0.4em] text-xl leading-none tracking-[0.28em] -mr-[0.28em] sm:text-2xl">
+          <span className="font-semibold">ZENO</span>
+          <span className="font-light text-lime">MARKETS</span>
         </p>
         <p className="mt-3 h-6 font-pixel text-sm tracking-[0.18em] text-paper-muted">
           LOADING <span className="text-lime">{TAPE[tape % TAPE.length]}</span> · {TAPE[(tape + 3) % TAPE.length]} · {TAPE[(tape + 7) % TAPE.length]}

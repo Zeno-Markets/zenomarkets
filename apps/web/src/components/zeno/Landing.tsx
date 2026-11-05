@@ -224,7 +224,7 @@ function Hero({ markets }: { markets: CardMarket[] }) {
             className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover/hero:opacity-100"
             style={{ background: "radial-gradient(460px circle at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%), color-mix(in srgb, var(--color-lime) 13%, transparent), transparent 70%)" }}
           />
-          <OrbSlot className="absolute right-4 top-4 size-16 sm:right-6 sm:top-6 sm:size-20 lg:hidden" />
+          <OrbSlot className="absolute right-6 top-5 size-14 sm:right-8 sm:top-6 sm:size-20 lg:hidden" />
           <div className="relative grid px-6 pb-10 pt-6 sm:px-12 sm:pb-12 sm:pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(240px,0.5fr)] lg:gap-10 lg:px-[6%] lg:pt-12">
             <div>
               <LiveBadge markets={markets} />

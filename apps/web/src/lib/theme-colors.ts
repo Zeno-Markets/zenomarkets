@@ -23,9 +23,9 @@ export const THEME_CARD_RULE = "#d0cec9";
 export const THEME_CARD_SHADE = "#e7e5df";
 
 /// The landing page's 3D logo (components/zeno/LogoOrb.tsx) is lit in WebGL, outside Tailwind's reach, and looks the
-/// same in both themes. The three logo colours are sampled from the mark itself (src/assets/zeno-mark.png): the olive
-/// of the glass body, the lime of its edges and bevels, and the cream of its glints.
+/// same in both themes. Its face is the mark's own artwork; these colour the rest, sampled from the mark
+/// (src/assets/zeno-mark.png): the lime of its glass edges for the slab's sides and the studio's lime light, and the
+/// cream of its glints for the light strips it reflects.
 export const THEME_LIME = "#d2f53a";
-export const THEME_LOGO_BODY = "#4f6c00";
-export const THEME_LOGO_RIM = "#d8f000";
+export const THEME_LOGO_RIM = "#c4ec0a";
 export const THEME_LOGO_GLINT = "#fcfacf";

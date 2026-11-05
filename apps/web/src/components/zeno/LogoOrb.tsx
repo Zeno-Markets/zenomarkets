@@ -3,13 +3,15 @@
 import { useEffect } from "react";
 import mark from "@/assets/zeno-mark.png";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { THEME_LIME, THEME_LOGO_BODY, THEME_LOGO_GLINT, THEME_LOGO_RIM } from "@/lib/theme-colors";
+import { THEME_LIME, THEME_LOGO_GLINT, THEME_LOGO_RIM } from "@/lib/theme-colors";
+import { MARK_OUTLINE } from "@/lib/zeno-mark-outline";
 
-/// The ZENOMARKETS mark as one real 3D object: the two interlocking chevrons extruded with rounded, bevelled edges in
-/// the mark's own glass: a dark olive body, edges that glow lime as they turn away from the eye, cream glints, all lit
-/// by a studio environment. It lives on one fixed WebGL layer above the landing page and glides
-/// between `OrbSlot` boxes, one per section, as the page scrolls: it always sits on the slot nearest the middle of the
-/// screen and eases continuously toward the next one, turning half a turn per section on the way.
+/// The ZENOMARKETS mark as one real 3D object, made from the mark itself: a slab cut to the exact outline of its two
+/// chevrons (traced from public/zeno-glass.png by scripts/trace-mark.py), the glass artwork of that same image on its
+/// face, seen over black as on the app icon's tile, lime glass on its sides, and a clear lacquer that catches light as
+/// it turns. It lives on one fixed WebGL layer above the landing page and glides between `OrbSlot` boxes, one per
+/// section, as the page scrolls: it sits on the slot nearest the middle of the screen and eases continuously toward
+/// the next one, making one full turn per section so it always arrives face on.
 ///
 /// The layer never takes a click, renders only while the tab is visible and is not mounted under reduced motion. Each
 /// slot shows a flat fallback mark until the first frame draws; then `data-orb="on"` on <html> hides them (globals.css).
@@ -43,7 +45,10 @@ function readSlots(): Slot[] {
 }
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-const easeInOutSine = (x: number) => -(Math.cos(Math.PI * x) - 1) / 2;
+const smoothstep = (from: number, to: number, v: number) => {
+  const x = clamp01((v - from) / (to - from));
+  return x * x * (3 - 2 * x);
+};
 
 export function LogoOrb() {
   const reduced = useReducedMotion();
@@ -54,7 +59,16 @@ export function LogoOrb() {
     let cleanup = () => {};
     (async () => {
       const THREE = await import("three");
-      if (disposed) return;
+      let art: InstanceType<typeof THREE.Texture>;
+      try {
+        art = await new THREE.TextureLoader().loadAsync("/zeno-glass.png");
+      } catch {
+        return; // No artwork: the fallback marks stay.
+      }
+      if (disposed) {
+        art.dispose();
+        return;
+      }
 
       let renderer: InstanceType<typeof THREE.WebGLRenderer>;
       try {
@@ -65,7 +79,6 @@ export function LogoOrb() {
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.NeutralToneMapping;
-      renderer.transmissionResolutionScale = 0.5;
       const canvas = renderer.domElement;
       canvas.setAttribute("aria-hidden", "true");
       Object.assign(canvas.style, { position: "fixed", inset: "0", zIndex: "30", pointerEvents: "none" });
@@ -73,15 +86,14 @@ export function LogoOrb() {
 
       const scene = new THREE.Scene();
       const pmrem = new THREE.PMREMGenerator(renderer);
-      // A dark studio with a few narrow light strips: the glass reflects thin cream streaks, as in the mark, not a
-      // bright room that would wash its faces out.
+      // A dark studio with a few narrow light strips: the lacquer reflects thin cream streaks as the logo turns, not a
+      // bright room that would wash the artwork out.
       const studio = new THREE.Scene();
       studio.background = new THREE.Color(0, 0, 0);
       const stripGeometry = new THREE.PlaneGeometry(1, 1);
       const strips: [w: number, h: number, x: number, y: number, z: number, roll: number, power: number, colour: string][] = [
-        // Almost straight ahead: as the logo sways, this one sweeps a diagonal streak across its faces.
+        // Almost straight ahead: as the logo sways, this one sweeps a diagonal streak across its face.
         [16, 0.9, 0.8, 1.6, 9, 0.75, 2.6, THEME_LOGO_GLINT],
-        // Low right, lime: the lighter lime the mark carries along its lower arms.
         [12, 2, 3, -4, 8, -0.7, 0.7, THEME_LOGO_RIM],
         [9, 0.5, -3, 4, 7, 0.65, 4, THEME_LOGO_GLINT],
         [7, 0.35, 5, 1.5, 6, -0.45, 2.5, THEME_LOGO_GLINT],
@@ -108,104 +120,51 @@ export function LogoOrb() {
       glow.position.set(6, -4, 5);
       scene.add(glow);
 
-      // The mark in a square frame: two L-shaped bands, the top + right band and its half-turn twin, a slit apart at
-      // two corners. Turned 45 degrees it is the diamond of the logo, the top + right band becoming the upper chevron.
-      const T = 0.42;
-      const gap = 0.1;
-      const upper: [number, number][] = [
-        [-1, 1],
-        [1, 1],
-        [1, -1 + T + gap],
-        [1 - T, -1 + T + gap],
-        [1 - T, 1 - T],
-        [-1, 1 - T],
-      ];
-      const radii = [0.16, 0.34, 0.14, 0.14, 0.08, 0.14];
-      const rounded = (points: [number, number][]) => {
-        const shape = new THREE.Shape();
-        points.forEach(([x, y], i) => {
-          const [px, py] = points[(i - 1 + points.length) % points.length]!;
-          const [nx, ny] = points[(i + 1) % points.length]!;
-          const r = radii[i]!;
-          const toPrev = Math.hypot(px - x, py - y);
-          const toNext = Math.hypot(nx - x, ny - y);
-          const ax = x + ((px - x) / toPrev) * r;
-          const ay = y + ((py - y) / toPrev) * r;
-          if (i === 0) shape.moveTo(ax, ay);
-          else shape.lineTo(ax, ay);
-          shape.quadraticCurveTo(x, y, x + ((nx - x) / toNext) * r, y + ((ny - y) / toNext) * r);
-        });
-        shape.closePath();
-        return shape;
-      };
-      const extrude = { depth: 0.14, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.085, bevelSegments: 10, curveSegments: 18 };
-      const geometryA = new THREE.ExtrudeGeometry(rounded(upper), extrude);
-      const geometryB = new THREE.ExtrudeGeometry(
-        rounded(upper.map(([x, y]) => [-x, -y])),
-        extrude,
-      );
-      for (const geometry of [geometryA, geometryB]) geometry.translate(0, 0, -extrude.depth / 2);
-
-      const material = new THREE.MeshPhysicalMaterial({
-        // The mark's glass: clear lime glass that darkens to olive with depth, under a lacquer that throws cream
-        // glints. Behind it the refraction pass sees nothing but black, so, as in the mark, the body reads as dark
-        // glass with luminous edges on any page colour. The pass runs at half resolution to stay light on phones.
-        color: THEME_LOGO_RIM,
-        roughness: 0.05,
+      // The face: the glass artwork, premultiplied so its translucent glass reads over black, as on the icon's tile.
+      // Cap UVs of an extruded shape are its own x, y, so the texture is mapped straight from the outline's unit
+      // space back onto the image.
+      const { size, cx, cy, r, pieces } = MARK_OUTLINE;
+      art.colorSpace = THREE.SRGBColorSpace;
+      art.premultiplyAlpha = true;
+      art.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      art.repeat.set(r / size, r / size);
+      art.offset.set(cx / size, 1 - cy / size);
+      const face = new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(0, 0, 0),
+        emissive: new THREE.Color(1, 1, 1),
+        emissiveMap: art,
+        roughness: 0.06,
         metalness: 0,
-        transmission: 1,
-        thickness: 0.7,
-        ior: 1.5,
-        attenuationColor: new THREE.Color(THEME_LOGO_BODY),
-        attenuationDistance: 0.35,
         clearcoat: 1,
-        clearcoatRoughness: 0.02,
-        specularColor: new THREE.Color(THEME_LOGO_GLINT),
-        specularIntensity: 1,
-        envMapIntensity: 1.6,
+        clearcoatRoughness: 0.03,
+        envMapIntensity: 0.9,
+        toneMapped: false,
       });
-      // The lime of the mark lives on its edges and bevels: a fresnel glow, strongest where the surface turns away from
-      // the eye, plus a little all over so the body is olive glass and not black, and a cream line right at the edge.
-      const rim = { value: new THREE.Color(THEME_LOGO_RIM) };
-      const glint = { value: new THREE.Color(THEME_LOGO_GLINT) };
-      material.onBeforeCompile = (shader) => {
-        shader.uniforms.uRim = rim;
-        shader.uniforms.uGlint = glint;
-        // The piece's own coordinates (the square frame above) reach the fragment, so the glass can be painted
-        // along its arms the way the mark is: a cream streak down the middle of each arm, lime along its inner edge.
-        shader.vertexShader = shader.vertexShader
-          .replace("void main() {", "varying vec3 vObj;\nvarying vec3 vObjNormal;\nvoid main() {")
-          .replace("#include <begin_vertex>", "#include <begin_vertex>\nvObj = position;\nvObjNormal = normal;");
-        shader.fragmentShader = shader.fragmentShader
-          .replace("void main() {", "uniform vec3 uRim;\nuniform vec3 uGlint;\nvarying vec3 vObj;\nvarying vec3 vObjNormal;\nvoid main() {")
-          .replace(
-            "#include <emissivemap_fragment>",
-            `#include <emissivemap_fragment>
-            float facing = clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0);
-            // Bevels and walls light up lime, the very edge goes cream: the mark's bright outline.
-            float edge = smoothstep(0.93, 0.5, facing);
-            totalEmissiveRadiance += uRim * (0.16 + 1.5 * edge) + uGlint * 0.9 * smoothstep(0.45, 0.15, facing);
-            // On the flat faces: a streak along each arm, brighter toward the outer corner, and lime near the hole.
-            float faceOn = smoothstep(0.8, 0.98, abs(normalize(vObjNormal).z));
-            float across = abs(vObj.y);
-            float along = sign(vObj.y) * vObj.x;
-            float streak = exp(-pow((across - ${(1 - T * 0.62).toFixed(3)}) / 0.05, 2.0)) * smoothstep(-0.95, -0.25, along) * (1.0 - smoothstep(0.3, 0.75, along));
-            float inner = exp(-pow((across - ${(1 - T + 0.05).toFixed(3)}) / 0.07, 2.0));
-            totalEmissiveRadiance += faceOn * (uGlint * 0.7 * streak + uRim * 0.45 * inner);`,
-          );
-      };
-      const pieceA = new THREE.Mesh(geometryA, material);
-      const pieceB = new THREE.Mesh(geometryB, material);
-      // The two halves sit a little apart in depth, so the logo reads as interlocked when it turns.
-      pieceA.position.z = 0.07;
-      pieceB.position.z = -0.07;
-      const diamond = new THREE.Group();
-      diamond.add(pieceA, pieceB);
-      diamond.rotation.z = Math.PI / 4;
-      // Square frame half-width 1 is about 1.5 across the diamond with the bevel: scale it to fit a unit radius.
-      diamond.scale.setScalar(1 / 1.5);
+      const side = new THREE.MeshPhysicalMaterial({
+        color: THEME_LOGO_RIM,
+        emissive: THEME_LOGO_RIM,
+        emissiveIntensity: 0.45,
+        roughness: 0.18,
+        metalness: 0,
+        clearcoat: 1,
+        clearcoatRoughness: 0.05,
+        envMapIntensity: 1.2,
+      });
+      const depth = 0.1;
+      const geometries = pieces.map((flat) => {
+        const shape = new THREE.Shape();
+        for (let i = 0; i < flat.length; i += 2) {
+          if (i === 0) shape.moveTo(flat[0]!, flat[1]!);
+          else shape.lineTo(flat[i]!, flat[i + 1]!);
+        }
+        shape.closePath();
+        const geometry = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false });
+        geometry.translate(0, 0, -depth / 2);
+        return geometry;
+      });
       const logo = new THREE.Group();
-      logo.add(diamond);
+      // An extruded shape's first material group is its two caps, the second its sides.
+      for (const geometry of geometries) logo.add(new THREE.Mesh(geometry, [face, side]));
       scene.add(logo);
 
       let width = 0;
@@ -241,15 +200,16 @@ export function LogoOrb() {
         const slots = readSlots();
         logo.visible = slots.length > 0;
         if (slots.length) {
-          // The slot pair around the middle of the screen, and how far the middle has moved from one to the next. The
-          // easing spans the whole distance, so the logo never sits still and then dashes: it drifts the whole way.
+          // The slot pair around the middle of the screen, and how far the middle has moved from one to the next. A
+          // smoothstep over the middle 70% of the way: the logo lingers by its section while it is read, then drifts
+          // to the next on a curve with no corners, so it never sits still and then dashes.
           const vc = height / 2;
           let i = 0;
           while (i < slots.length - 1 && slots[i + 1]!.cy <= vc) i++;
           const a = slots[i]!;
           const b = slots[Math.min(i + 1, slots.length - 1)]!;
-          const t = a === b || vc <= a.cy ? 0 : easeInOutSine(clamp01((vc - a.cy) / (b.cy - a.cy)));
-          const target = { x: a.cx + (b.cx - a.cx) * t, y: a.cy + (b.cy - a.cy) * t, size: a.size + (b.size - a.size) * t, turn: (i + t) * Math.PI };
+          const t = a === b || vc <= a.cy ? 0 : smoothstep(0.15, 0.85, (vc - a.cy) / (b.cy - a.cy));
+          const target = { x: a.cx + (b.cx - a.cx) * t, y: a.cy + (b.cy - a.cy) * t, size: a.size + (b.size - a.size) * t, turn: (i + t) * Math.PI * 2 };
           if (!state.ready) Object.assign(state, target, { ready: true });
           // Exponential follow: frame-rate independent, no overshoot, no step when the scroll speed changes.
           const k = 1 - Math.exp(-dt * 7);
@@ -277,9 +237,10 @@ export function LogoOrb() {
         window.removeEventListener("resize", resize);
         window.removeEventListener("pointermove", onPointer);
         delete document.documentElement.dataset.orb;
-        geometryA.dispose();
-        geometryB.dispose();
-        material.dispose();
+        for (const geometry of geometries) geometry.dispose();
+        face.dispose();
+        side.dispose();
+        art.dispose();
         scene.environment?.dispose();
         pmrem.dispose();
         renderer.dispose();

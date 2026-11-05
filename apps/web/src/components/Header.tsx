@@ -120,12 +120,31 @@ export function Header() {
       )}
     >
       <div className={cn("flex items-center justify-between gap-3", publicBar ? `h-[72px] ${LANDING_FRAME}` : `h-16 ${APP_GUTTER}`)}>
-        <div className="flex h-full items-center gap-6">
+        <div className="flex h-full min-w-0 items-center gap-6 2xl:gap-8">
           <Link href="/" aria-label="ZENO home" className="flex h-full shrink-0 items-center">
             <Logo />
           </Link>
           <HeaderCa />
-          {publicBar ? null : (
+          <span aria-hidden className="hidden h-6 w-px bg-line xl:block" />
+          {publicBar ? (
+            <nav aria-label="Landing" className="hidden h-full items-center gap-6 font-mono text-[11px] uppercase tracking-[0.12em] xl:flex 2xl:gap-8">
+              {[
+                { href: "#markets", label: "Markets" },
+                { href: "#products", label: "Products" },
+                { href: "#contracts", label: "Contracts" },
+                { href: "#roadmap", label: "Roadmap" },
+              ].map((item) => (
+                <Link key={item.href} href={landing ? item.href : `/${item.href}`} className="group/nav inline-flex items-center gap-1.5 py-1 text-text/80 transition-colors duration-150 hover:text-text">
+                  <span aria-hidden className="size-2 rounded-[2px] border border-current transition-colors duration-200 group-hover/nav:border-accent-fg group-hover/nav:bg-accent" />
+                  {item.label}
+                </Link>
+              ))}
+              <Link href={NEWS_LINK.href} aria-current={news ? "page" : undefined} className={cn("group/nav inline-flex items-center gap-1.5 py-1 transition-colors duration-150 hover:text-text", news ? "text-text" : "text-text/80")}>
+                <span aria-hidden className={cn("size-2 rounded-[2px] border border-current transition-colors duration-200 group-hover/nav:border-accent-fg group-hover/nav:bg-accent", news && "border-accent-fg bg-accent")} />
+                {NEWS_LINK.label}
+              </Link>
+            </nav>
+          ) : (
             <nav
               ref={navRef}
               aria-label="Primary"
@@ -148,25 +167,6 @@ export function Header() {
             </nav>
           )}
         </div>
-        {publicBar ? (
-          <nav aria-label="Landing" className="hidden flex-1 items-center justify-center gap-6 font-mono 2xl:gap-8 text-[11px] uppercase tracking-[0.12em] xl:flex">
-            {[
-              { href: "#markets", label: "Markets" },
-              { href: "#products", label: "Products" },
-              { href: "#contracts", label: "Contracts" },
-              { href: "#roadmap", label: "Roadmap" },
-            ].map((item) => (
-              <Link key={item.href} href={landing ? item.href : `/${item.href}`} className="group/nav inline-flex items-center gap-1.5 py-1 text-text/80 transition-colors duration-150 hover:text-text">
-                <span aria-hidden className="size-2 rounded-[2px] border border-current transition-colors duration-200 group-hover/nav:border-accent-fg group-hover/nav:bg-accent" />
-                {item.label}
-              </Link>
-            ))}
-            <Link href={NEWS_LINK.href} aria-current={news ? "page" : undefined} className={cn("group/nav inline-flex items-center gap-1.5 py-1 transition-colors duration-150 hover:text-text", news ? "text-text" : "text-text/80")}>
-              <span aria-hidden className={cn("size-2 rounded-[2px] border border-current transition-colors duration-200 group-hover/nav:border-accent-fg group-hover/nav:bg-accent", news && "border-accent-fg bg-accent")} />
-              {NEWS_LINK.label}
-            </Link>
-          </nav>
-        ) : null}
         <div className="flex items-center gap-3 sm:gap-4">
           <NetworkMenu />
           <NotificationBell />
