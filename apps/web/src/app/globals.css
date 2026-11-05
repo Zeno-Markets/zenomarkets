@@ -543,3 +543,69 @@ body {
     animation: none;
   }
 }
+
+/* ---------- landing interactivity ---------- */
+
+/* The 3D logo (components/zeno/LogoOrb.tsx) marks <html data-orb="on"> once it draws; the flat marks it replaces
+   step aside then. Without WebGL, or under reduced motion, they stay. */
+.orb-fallback,
+.orb-hide {
+  transition: opacity 500ms ease;
+}
+html[data-orb="on"] .orb-fallback,
+html[data-orb="on"] .orb-hide {
+  opacity: 0;
+}
+
+/* Line art that draws itself once its section is in view (`.is-shown` comes from Reveal). Drawn shapes carry
+   `pathLength="1"` and `data-draw`; dots carry `data-pop` and pop in on a stagger set inline. */
+.draw-art [data-draw] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1.6s cubic-bezier(0.6, 0, 0.2, 1);
+}
+.is-shown .draw-art [data-draw] {
+  stroke-dashoffset: 0;
+}
+.draw-art [data-pop] {
+  opacity: 0;
+  transform: scale(0);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 0.4s ease,
+    transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+.is-shown .draw-art [data-pop] {
+  opacity: 1;
+  transform: none;
+}
+
+/* SVG parts that move on hover: transforms in CSS pixels around their own box. */
+.svg-move {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.card-in {
+  animation: card-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+@keyframes draw-line {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}

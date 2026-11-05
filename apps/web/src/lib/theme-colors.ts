@@ -21,3 +21,11 @@ export const THEME_CARD_MUTED = "#514f4e";
 /// `to-[color-mix(...95%...)]` stop in `packages/ui/src/PnlCard.tsx`.
 export const THEME_CARD_RULE = "#d0cec9";
 export const THEME_CARD_SHADE = "#e7e5df";
+
+/// The landing page's 3D logo (components/zeno/LogoOrb.tsx) is lit in WebGL, outside Tailwind's reach, and looks the
+/// same in both themes. Lime, ink and paper mirror `--color-lime`, `--color-ink` and `--color-paper` in globals.css;
+/// olive is the brand lime darkened for the shaded voxels.
+export const THEME_LIME = "#d2f53a";
+export const THEME_OLIVE = "#6f8a0b";
+export const THEME_INK = "#0a0c05";
+export const THEME_PAPER = "#eef2e2";

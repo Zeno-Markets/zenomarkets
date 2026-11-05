@@ -68,7 +68,11 @@ export function Footer() {
                 aria-hidden
                 className="relative -mb-[3.2vw] select-none whitespace-nowrap text-center font-condensed text-[18.4vw] font-extrabold italic uppercase leading-[0.82] tracking-[-0.01em] text-paper"
             >
-                Zenomarkets
+                {[...'Zenomarkets'].map((letter, i) => (
+                    <span key={i} className="inline-block transition-[transform,color] duration-500 ease-out hover:-translate-y-[0.06em] hover:-rotate-2 hover:text-lime">
+                        {letter}
+                    </span>
+                ))}
             </p>
         </footer>
     );
