@@ -151,7 +151,10 @@ function drawCard(canvas: HTMLCanvasElement, market: CardMarket, spark: Spark | 
   }
 }
 
-export function HeroCarousel({ markets, sparks }: { markets: CardMarket[]; sparks: Record<string, Spark> | undefined }) {
+export function HeroCarousel({ markets: listed, sparks }: { markets: CardMarket[]; sparks: Record<string, Spark> | undefined }) {
+  // A market without a spark would draw as a blank card; once prices are in, only priced markets go on the ring.
+  const priced = sparks ? listed.filter((m) => sparks[m.symbol]) : [];
+  const markets = priced.length > 0 ? priced : listed;
   const host = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const redraw = useRef<(() => void) | null>(null);
@@ -186,9 +189,10 @@ export function HeroCarousel({ markets, sparks }: { markets: CardMarket[]; spark
       const ring = new THREE.Group();
       scene.add(ring);
 
-      // Enough cards to wrap the whole circle with a small gap; markets repeat when the list is short.
-      const step = (CARD_W + 0.45) / RADIUS;
-      const count = Math.floor((Math.PI * 2) / step);
+      // Enough cards to wrap the whole circle with a small gap; markets repeat when the list is short. The step is
+      // then evened out over the full circle so the seam where the ring closes has no wider hole than the rest.
+      const count = Math.floor((Math.PI * 2 * RADIUS) / (CARD_W + 0.45));
+      const step = (Math.PI * 2) / count;
       const cards: { mesh: InstanceType<typeof THREE.Mesh>; canvas: HTMLCanvasElement; texture: InstanceType<typeof THREE.CanvasTexture>; market: CardMarket; lift: number; hot: boolean }[] = [];
       const geometry = new THREE.PlaneGeometry(CARD_W, CARD_H, 1, 1);
       for (let i = 0; i < count; i++) {
