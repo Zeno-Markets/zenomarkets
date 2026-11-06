@@ -175,6 +175,9 @@ stay with the deployer key. Decide how they move (extend the script, or grant an
 Nothing to deploy: the subaccount factory has been on chain since V1.0, and the keeper's own account is the copy
 executor followers authorise.
 
+0. **Prove it on testnet first** (same code, every release on): `FUNDER_KEY=<a funded testnet key> pnpm --filter
+   @zeno/keeper copy:live-e2e` follows a fresh leader through the live API, and the running keeper must open the copy
+   and close it again. It must end in `ALL PASS`.
 1. **Point the API at the executor:** add `COPY_EXECUTOR_ADDRESS=<the keeper's address>` to
    `/opt/zeno/mainnet/zeno.env` (testnet has the same line).
 2. **Switch on:** set `RELEASE=3`, push to `mainnet` and run `vps-deploy.sh mainnet`.

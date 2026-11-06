@@ -11,7 +11,8 @@
     "lint": "echo \"scaffold: services/keeper lint\" && exit 0",
     "test": "tsx --test src/*.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "copy:e2e": "tsx scripts/copy-e2e.ts"
+    "copy:e2e": "tsx scripts/copy-e2e.ts",
+    "copy:live-e2e": "tsx scripts/copy-live-e2e.ts"
   },
   "dependencies": {
     "@zeno/config": "workspace:*",
