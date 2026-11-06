@@ -259,7 +259,7 @@ export function LendingView() {
               <Row label="Borrow limit">{pct(m.maxLtvBps)} of collateral value</Row>
               <Row label="Liquidated at">{pct(m.liquidationLtvBps)} of collateral value</Row>
               <Row label="Liquidator bonus">{pct(m.liquidationBonusBps)}</Row>
-              <Row label="Collateral supplied">{`${fmt(m.totalSupplyCollateral, cDecimals, 2)} ${symbol} of ${fmtCompact(Number(formatUnits(m.supplyCap, cDecimals)))} cap`}</Row>
+              <Row label="Collateral supplied">{`${fmt(m.totalSupplyCollateral, cDecimals, 4)} ${symbol} of ${fmt(m.supplyCap, cDecimals, 2)} cap`}</Row>
               <Row label="Borrowed">{`${fmtUsd(m.totalBorrowedDebt, debtDecimals, 2)} of $${fmtCompact(Number(formatUnits(m.borrowCap, debtDecimals)))} cap`}</Row>
             </dl>
             <p className="mt-2 text-xs text-muted">The caps are small at launch on purpose.</p>
