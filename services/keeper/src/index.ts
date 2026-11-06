@@ -60,6 +60,9 @@ const creditFeed =
         creditOracle: addresses.creditOracle,
         creditPair: addresses.creditPairTslaUsdg,
         collateralMarketId: stringToHex(process.env.KEEPER_CREDIT_MARKET ?? "TSLA", { size: 32 }),
+        // Max LTV 60%, liquidation 70%: a 2% lag stays well inside that gap, and most Chainlink prints cost no gas.
+        minMoveBps: BigInt(process.env.KEEPER_CREDIT_MIN_MOVE_BPS ?? 200),
+        heartbeatSeconds: BigInt(process.env.KEEPER_CREDIT_HEARTBEAT_SECONDS ?? 14_400),
       })
     : undefined;
 

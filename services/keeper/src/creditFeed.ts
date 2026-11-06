@@ -23,6 +23,12 @@ export function exceedsDeviation(stored: bigint, next: bigint, maxBps: bigint): 
   return ((next > stored ? next - stored : stored - next) * 10_000n) / stored > maxBps;
 }
 
+/// True when the oracle can keep `stored`: every write costs the keeper's wallet gas, so a small move waits until it
+/// grows past `minMoveBps` or the stored price reaches `heartbeatSeconds` of age. The first price is always written.
+export function canSkipWrite(stored: bigint, next: bigint, ageSeconds: bigint, minMoveBps: bigint, heartbeatSeconds: bigint): boolean {
+  return stored !== 0n && ageSeconds < heartbeatSeconds && !exceedsDeviation(stored, next, minMoveBps);
+}
+
 export interface CreditFeedDeps {
   publicClient: PublicClient;
   walletClient: WalletClient;
@@ -31,6 +37,10 @@ export interface CreditFeedDeps {
   creditPair: Address;
   /// The market id (32 bytes) whose Chainlink feed prices the collateral, e.g. TSLA.
   collateralMarketId: `0x${string}`;
+  /// Smallest collateral price move worth a transaction, in basis points.
+  minMoveBps: bigint;
+  /// Age at which the collateral price is rewritten even after a small move.
+  heartbeatSeconds: bigint;
   log?: (message: string) => void;
 }
 
@@ -69,6 +79,8 @@ export function createCreditFeed(deps: CreditFeedDeps) {
     // The feed has not printed since the oracle was last written: pushing it again would only reset the stale clock.
     if (updatedAt <= lastUpdated && price !== 0n) return false;
     if (next === price) return false;
+    const now = (await publicClient.getBlock()).timestamp;
+    if (canSkipWrite(price, next, now - lastUpdated, deps.minMoveBps, deps.heartbeatSeconds)) return false;
 
     const maxBps = await publicClient.readContract({ address: creditOracle, abi: oracleAbi, functionName: "maxDeviationBps" });
     // A gap at the open can pass the per-update limit; the owner may force the price.
