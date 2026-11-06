@@ -167,6 +167,8 @@ stay with the deployer key. Decide how they move (extend the script, or grant an
 3. **RFQ:** confirm the market maker that will quote holds `MAKER_ROLE` on `ZenoRFQManager`.
 4. **Switch on:** set `RELEASE=2` in `/opt/zeno/mainnet/zeno.env`, push to `mainnet` and run
    `vps-deploy.sh mainnet` as in V1.0 step 8.
+   **Seed the pair before anyone can borrow:** `bash scripts/mainnet-seed-credit.sh --broadcast`. The pair starts with
+   no USDG, so every borrow reverts until it holds its `borrowCap`. The pair has no way to withdraw liquidity.
 5. **Check:** the menu shows Lending and Strategies, not Copy trading; `/v1/credit/markets` answers 200; the roadmap
    marks V2.0 "Live now".
 
