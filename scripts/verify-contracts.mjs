@@ -121,7 +121,7 @@ const NAMES = {
   optionPositionManager: ["ZenoOptionPositionManager", "Stores option positions"],
   insuranceFund: ["ZenoInsuranceFund", "Covers liquidation shortfalls"],
   crossMargin: ["ZenoCrossMarginManager", "Account-wide cross margin"],
-  subaccountFactory: ["ZenoSubaccountFactory", "Creates subaccounts"],
+  subaccountFactory: ["ZenoSubaccountFactory", "Creates copy subaccounts: the copy executor can trade in one, never withdraw"],
   creditOracle: ["ZenoCompositeSanityOracle", "Collateral price with jump guard"],
   creditRegistry: ["ZenoCreditRegistry", "Lending pairs and their limits"],
   creditRouter: ["ZenoCreditRouter", "Deposit and borrow in one transaction"],
@@ -129,10 +129,11 @@ const NAMES = {
   creditPairTslaUsdg: ["ZenoCreditPair", "TSLA-backed USDG loans"],
   settlementToken: ["ZenoTestToken · USDG", "Testnet settlement dollar"],
 };
-const TRADING = ["marketRegistry", "vault", "collateralManager", "perpsEngine", "perpPositionManager", "perpOrderManager", "fundingManager", "liquidationEngine", "rfqManager", "optionsEngine", "optionMarket", "optionPositionManager", "oracleRouter", "priceValidator", "riskManager", "crossMargin", "insuranceFund", "feeManager", "buybackModule", "subaccountFactory"];
+const TRADING = ["marketRegistry", "vault", "collateralManager", "perpsEngine", "perpPositionManager", "perpOrderManager", "fundingManager", "liquidationEngine", "rfqManager", "optionsEngine", "optionMarket", "optionPositionManager", "oracleRouter", "priceValidator", "riskManager", "crossMargin", "insuranceFund", "feeManager", "buybackModule"];
 const GROUPS = [
   { id: "trading", title: "Trading core", hint: "perps, options, vault, risk, oracle", keys: TRADING },
   { id: "lending", title: "Lending & borrowing", hint: "pair, vault, registry, router, oracle", keys: ["creditPairTslaUsdg", "creditVault", "creditRegistry", "creditRouter", "creditOracle"] },
+  { id: "copy", title: "Copy trading", hint: "subaccount factory, and the code of every copy subaccount", keys: ["subaccountFactory"] },
   NET.source
     ? { id: "assets", title: "Price feeds", hint: "one Chainlink feed adapter per market", keys: [], markets: true, count: "1 per market" }
     : { id: "assets", title: "Market assets", hint: "USDG + every market's token and price feed", keys: ["settlementToken"], markets: true, count: "1 + 2 per market" },
