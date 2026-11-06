@@ -6,7 +6,7 @@
 //   mainnet  compiles the contracts from this repo, then compares the bytecode on chain with it byte for byte: each
 //            proxy against OpenZeppelin's ERC1967Proxy and the implementation behind it (EIP-1967 slot) against its
 //            source; and that the source of each (proxy and implementation) is published on Sourcify, which Blockscout
-//            shows as verified (packages/contracts/script/verify.sh, VERIFIER=sourcify). Ends with the live state.
+//            shows as verified (packages/contracts/script/verify.sh, VERIFIER=sourcify).
 // Reads only public data: the deployment record in packages/contracts/deployments and public endpoints.
 import { spawn } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -328,44 +328,6 @@ async function row(n, total, item, pending) {
   return result.ok;
 }
 
-/// What the venue holds right now (mainnet), read from the contracts just checked.
-async function liveState() {
-  const token = deployments.settlementToken;
-  const [ids, pool, share, decimals, symbol] = await Promise.all([
-    call(deployments.marketRegistry, "0x5dc06f4d"), // allMarketIds()
-    call(deployments.vault, `0x68abb5e0${token.slice(2).toLowerCase().padStart(64, "0")}`), // poolBalance(address)
-    call(deployments.feeManager, "0xb1ccb4ac"), // buybackShareBps()
-    call(token, "0x313ce567"), // decimals()
-    call(token, "0x95d89b41"), // symbol()
-  ]);
-  const name = Buffer.from(word(symbol, 2), "hex").toString("utf8").slice(0, parseInt(word(symbol, 1), 16));
-  const amount = Number(BigInt(`0x${word(pool, 0)}`)) / 10 ** parseInt(word(decimals, 0), 16);
-  const facts = [
-    ["Markets", `${parseInt(word(ids, 1), 16)} live · stocks, ETFs, crypto, commodities`],
-    ["Settlement", `${name} · ${short(token)}`],
-    ["Trading pool", `${amount.toFixed(2)} ${name}`],
-    ["Buyback", `${parseInt(word(share, 0), 16) / 100}% of every trading fee → ZenoBuybackModule`],
-  ];
-  if (deployments.creditPairTslaUsdg) {
-    const pair = deployments.creditPairTslaUsdg;
-    const [supplied, borrowed, liquidity, paused] = await Promise.all([
-      call(pair, "0x8c3ae7b4"), // totalSupplyCollateral()
-      call(pair, "0x23b25d6d"), // totalBorrowedDebt()
-      call(token, `0x70a08231${pair.slice(2).toLowerCase().padStart(64, "0")}`), // balanceOf(pair)
-      call(deployments.creditVault, "0x60da3e83"), // depositsPaused()
-    ]);
-    const units = (hex, decimals) => (Number(BigInt(`0x${word(hex, 0)}`)) / 10 ** decimals).toFixed(decimals === 18 ? 4 : 2);
-    facts.push(["Lending", `TSLA/USDG · ${units(supplied, 18)} TSLA supplied · ${units(borrowed, 6)} ${name} borrowed · ${units(liquidity, 6)} ${name} to lend`]);
-    facts.push(["Lending vault", BigInt(`0x${word(paused, 0)}`) ? "deposits paused" : "deposits open"]);
-  }
-  out(`   ${lime("▌")} ${bold(text("LIVE ON CHAIN"))}`);
-  for (const [k, v] of facts) {
-    out(`   ${muted(pad(k, 14))}${text(v)}`);
-    await sleep(140);
-  }
-  out();
-}
-
 async function main() {
   await banner();
   if (NET.source) await compile();
@@ -407,7 +369,6 @@ async function main() {
   }
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
   const all = passed === items.length;
-  if (NET.source && all) await liveState();
   const line = "━".repeat(78);
   const verdict = all
     ? NET.source
