@@ -146,7 +146,9 @@ SIGN=(--rpc-url "$RPC" --account zeno-mainnet --sender "$DEPLOYER")
 
 Steps 1 to 3 run in one go from the repo root: `bash scripts/mainnet-v2.sh` (dry run), then `--broadcast`. It deploys
 the pair open (`CREDIT_PAUSED=false`), opens the lending vault's deposits, checks `MAKER_ROLE` and records the
-addresses. `pnpm mainnet:verify` then checks the lending contracts too.
+addresses. Then publish the sources to Sourcify (Blockscout shows them as verified; its own API sits behind a
+Cloudflare challenge) and check: `cd packages/contracts && VERIFIER=sourcify NETWORK_NAME=robinhood_mainnet
+ROBINHOOD_TESTNET_RPC_URL=$RPC ./script/verify.sh`, then `pnpm mainnet:verify`.
 
 Open before V2.0: `HandOverAdmin.s.sol` does not move the lending stack's admin roles, so after step 1 below they
 stay with the deployer key. Decide how they move (extend the script, or grant and renounce by hand) before opening.

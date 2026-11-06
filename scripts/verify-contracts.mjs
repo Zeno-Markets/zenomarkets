@@ -5,7 +5,8 @@
 //   testnet  bytecode on chain (RPC) + verified source on Blockscout.
 //   mainnet  compiles the contracts from this repo, then compares the bytecode on chain with it byte for byte: each
 //            proxy against OpenZeppelin's ERC1967Proxy and the implementation behind it (EIP-1967 slot) against its
-//            source. Only the RPC is used, so nothing depends on the explorer. Ends with the live state of the venue.
+//            source; and that the source of each (proxy and implementation) is published on Sourcify, which Blockscout
+//            shows as verified (packages/contracts/script/verify.sh, VERIFIER=sourcify). Ends with the live state.
 // Reads only public data: the deployment record in packages/contracts/deployments and public endpoints.
 import { spawn } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -94,7 +95,7 @@ async function banner() {
   }
   out();
   out(`   ${bg(210, 245, 58)(ink(bold(` ${NET.label} `)))}  ${muted(`${NET.name} · chain ${NET.chainId}`)}`);
-  out(`   ${faint(NET.source ? "Live check: the bytecode on chain is byte-for-byte the open-source code in this repo" : "Live check: bytecode on chain (RPC) + verified source on Blockscout")}`);
+  out(`   ${faint(NET.source ? "Live check: the bytecode on chain is byte-for-byte the open-source code in this repo, and that source is verified on the explorer" : "Live check: bytecode on chain (RPC) + verified source on Blockscout")}`);
   out();
 }
 
@@ -207,14 +208,28 @@ function comparable(hex, { immutableReferences }) {
 }
 const matches = (onChain, name) => onChain.length > 2 && artifact(name).some((a) => comparable(onChain, a) === comparable(a.object, a));
 
+/// Whether the source of `address` is published on Sourcify (script/verify.sh with VERIFIER=sourcify), which is
+/// what Blockscout shows as a verified contract.
+const published = (address) =>
+  fetch(`https://sourcify.dev/server/v2/contract/${NET.chainId}/${address}`, { signal: AbortSignal.timeout(20_000) })
+    .then((r) => (r.ok ? r.json() : {}))
+    .then((j) => j.match === "exact_match" || j.match === "match")
+    .catch(() => false);
+
 async function inspectAgainstSource(item) {
   const code = await rpc("eth_getCode", [item.address, "latest"]);
   const live = code.length > 2;
-  if (!item.proxy) return { address: item.address, live, ok: live && matches(code, item.contract), proxy: false };
+  if (!item.proxy) {
+    const same = live && matches(code, item.contract);
+    const pub = await published(item.address);
+    return { address: item.address, live, same, published: pub, ok: same && pub, proxy: false };
+  }
   const implAddress = addr((await rpc("eth_getStorageAt", [item.address, IMPLEMENTATION_SLOT, "latest"])).slice(2));
   const implCode = await rpc("eth_getCode", [implAddress, "latest"]);
   const implVerified = matches(implCode, item.contract);
-  return { address: item.address, live, ok: live && matches(code, "ERC1967Proxy") && implVerified, proxy: true, implName: item.contract, implAddress, implVerified };
+  const same = live && matches(code, "ERC1967Proxy") && implVerified;
+  const pub = (await Promise.all([published(item.address), published(implAddress)])).every(Boolean);
+  return { address: item.address, live, same, published: pub, ok: same && pub, proxy: true, implName: item.contract, implAddress, implVerified };
 }
 const inspect = NET.source ? inspectAgainstSource : inspectOnExplorer;
 
@@ -296,7 +311,8 @@ async function row(n, total, item, pending) {
   if (spin) clearInterval(spin);
   const okLabel = NET.source ? " ✓ MATCHES SOURCE " : " ✓ VERIFIED ";
   const failLabel = NET.source ? " ✗ DIFFERS FROM SOURCE " : " ✗ UNVERIFIED ";
-  const badge = result.ok ? bg(210, 245, 58)(ink(bold(okLabel))) : bg(255, 107, 94)(ink(bold(result.live ? failLabel : " ✗ NO CODE ")));
+  const fail = !result.live ? " ✗ NO CODE " : NET.source && result.same ? " ✗ SOURCE NOT ON EXPLORER " : failLabel;
+  const badge = result.ok ? bg(210, 245, 58)(ink(bold(okLabel))) : bg(255, 107, 94)(ink(bold(fail)));
   const url = `${NET.explorer}/address/${result.address}?tab=contract`;
   const proxyNote = !result.proxy
     ? ""
@@ -307,7 +323,7 @@ async function row(n, total, item, pending) {
   out(`   ${label}  ${result.ok ? lime("●") : red("●")} ${pad(bold(text(item.name)), 34)} ${badge}`);
   out(`          ${muted("address ")} ${text(result.address)}`);
   out(`          ${muted("explorer")} ${olive(link(url, url.replace("https://", "").replace("?tab=contract", "")))}`);
-  out(`          ${faint(`${item.role}${proxyNote}`)}`);
+  out(`          ${faint(`${item.role}${proxyNote}${NET.source && result.published ? " · source verified on the explorer (Sourcify)" : ""}`)}`);
   out();
   return result.ok;
 }
@@ -395,7 +411,7 @@ async function main() {
   const line = "━".repeat(78);
   const verdict = all
     ? NET.source
-      ? "Every contract on chain is byte-for-byte the open-source code."
+      ? "Every contract on chain is byte-for-byte the open-source code, verified on the explorer."
       : "Every contract is live on chain and its source is public."
     : "Some contracts need attention (see the red rows).";
   out(`   ${all ? lime(line) : red(line)}`);

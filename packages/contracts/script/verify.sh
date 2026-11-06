@@ -16,6 +16,9 @@
 # --skip-is-verified-check makes forge submit even when Blockscout lists a look-alike contract as
 # already verified (same bytecode from an older deployment), which is not a real verification.
 # The script is safe to re-run.
+# VERIFIER=sourcify publishes to Sourcify instead (no explorer API, so no Cloudflare in the way); Blockscout shows
+# a Sourcify-verified contract as verified. Mainnet: VERIFIER=sourcify ROBINHOOD_TESTNET_RPC_URL=<mainnet rpc>
+# NETWORK_NAME=robinhood_mainnet ./script/verify.sh
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -26,9 +29,19 @@ impl_file="deployments/${NETWORK_NAME:-robinhood_testnet}.implementations.json"
 attempts="${VERIFY_ATTEMPTS:-3}"
 
 # "verified" only for a real match: a look-alike (verified twin) still gets submitted, see the note above.
-explorer="${EXPLORER_VERIFY_URL%/}"
+explorer="${EXPLORER_VERIFY_URL:-}"
+explorer="${explorer%/}"
 explorer="${explorer%/api}"
+sourcify=false
+[[ "${VERIFIER:-blockscout}" == sourcify ]] && sourcify=true
+chain_id="$(cast chain-id --rpc-url "$ROBINHOOD_TESTNET_RPC_URL")"
 status() {
+  if $sourcify; then
+    curl -s -m 30 "https://sourcify.dev/server/v2/contract/$chain_id/$1" |
+      jq -r 'if .match == "exact_match" or .match == "match" then "verified" else "unverified" end' 2>/dev/null ||
+      echo unverified
+    return
+  fi
   curl -s -m 30 "$explorer/api/v2/smart-contracts/$1" |
     jq -r 'if .is_verified == true and (.is_verified_via_verified_twin != true) then "verified" else "unverified" end' 2>/dev/null ||
     echo unverified
@@ -78,13 +91,20 @@ verify() {
     return 0
   fi
   for ((try = 1; try <= attempts; try++)); do
-    if [[ "${4:-}" == "api" ]]; then
+    # Sourcify compiles from the metadata itself, so the credit-via-ir build goes through forge like the rest.
+    if $sourcify; then
+      if forge verify-contract "$address" "$contract" --chain "$chain_id" --verifier sourcify \
+        --rpc-url "$ROBINHOOD_TESTNET_RPC_URL" "${profile[@]}" --watch; then
+        echo "    [published & verified]"
+        return 0
+      fi
+    elif [[ "${4:-}" == "api" ]]; then
       if verify_api "$address" "$contract" "$3"; then
         echo "    [published & verified]"
         return 0
       fi
     elif forge verify-contract "$address" "$contract" \
-      --chain-id "$(cast chain-id --rpc-url "$ROBINHOOD_TESTNET_RPC_URL")" \
+      --chain-id "$chain_id" \
       --verifier blockscout \
       --verifier-url "$EXPLORER_VERIFY_URL" \
       --guess-constructor-args \
@@ -144,6 +164,14 @@ if [[ -z "${SKIP_MOCKS:-}" ]] && [[ "$(cast chain-id --rpc-url "$ROBINHOOD_TESTN
     feed="$(cast call "$(addr oracleRouter)" "primarySource(bytes32)(address)" "$id" --rpc-url "$ROBINHOOD_TESTNET_RPC_URL")"
     verify "$token" src/testnet/ZenoTestToken.sol:ZenoTestToken </dev/null
     verify "$feed" src/oracle/ZenoTestnetFeed.sol:ZenoTestnetFeed </dev/null
+  done
+fi
+
+# Mainnet price feeds: one ZenoChainlinkPriceFeed per market, read from the oracle router.
+if [[ "$chain_id" == 4663 ]]; then
+  for id in $(cast call "$(addr marketRegistry)" "allMarketIds()(bytes32[])" --rpc-url "$ROBINHOOD_TESTNET_RPC_URL" | tr -d '[],'); do
+    verify "$(cast call "$(addr oracleRouter)" "primarySource(bytes32)(address)" "$id" --rpc-url "$ROBINHOOD_TESTNET_RPC_URL")" \
+      src/oracle/ZenoChainlinkPriceFeed.sol:ZenoChainlinkPriceFeed </dev/null
   done
 fi
 
