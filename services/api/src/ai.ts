@@ -7,7 +7,8 @@ import { formatUnits } from "viem";
 /// results that carry their own `source` and `asOf`. No wallet is needed to ask.
 
 export const MAX_ROUNDS = 4;
-export const TIMEOUT_MS = 15_000;
+/// 25 s: a free-tier provider slows its answers near its tokens-per-minute cap, and 15 s then ran out mid-answer.
+export const TIMEOUT_MS = 25_000;
 export const HISTORY_MESSAGES = 6;
 export const MESSAGE_CHARS = 2_000;
 
@@ -384,7 +385,7 @@ export interface LlmConfig {
   model: string;
 }
 
-/// `busy`: the provider said 429 or quota. `timeout`: the 15 s budget ran out. `unavailable`: anything else.
+/// `busy`: the provider said 429 or quota. `timeout`: the 25 s budget ran out. `unavailable`: anything else.
 export class LlmError extends Error {
   constructor(
     public readonly kind: "busy" | "timeout" | "unavailable",
@@ -495,7 +496,7 @@ export async function runChat(options: { config: LlmConfig; tools: Tool[]; reque
     }
 
     wire.push({ role: "assistant", content: reply.content, tool_calls: reply.tool_calls });
-    // The calls of one round run together (the 15 s budget is shared), and their results go back in the model's order.
+    // The calls of one round run together (the 25 s budget is shared), and their results go back in the model's order.
     const results = await Promise.all(
       reply.tool_calls.map(async (call) => {
         const tool = tools.find((candidate) => candidate.name === call.function.name);

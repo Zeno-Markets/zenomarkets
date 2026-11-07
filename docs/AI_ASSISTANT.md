@@ -9,7 +9,7 @@ that can write, sign or send. It needs no wallet. Cost: $0 by construction (free
   `user` and `assistant` only. History is cut to the last 6 messages of at most 2,000 characters.
 - Answer `{ answer, sources: [{ tool, source, asOf }] }`. The sheet shows each source and its UTC time under the answer.
 - A risk line ends every answer built on tool data (the code adds one if the model forgets); a greeting or a refusal has none.
-- The model runs a tool loop on the server: at most **4 tool rounds** and **15 seconds** in total. After round 4 it gets
+- The model runs a tool loop on the server: at most **4 tool rounds** and **25 seconds** in total. After round 4 it gets
   no tools and must answer.
 - Tools (all read-only, all return `{ source, asOf, data }`):
 
@@ -37,7 +37,7 @@ that can write, sign or send. It needs no wallet. Cost: $0 by construction (free
 | Per address | 429 | `rate_limited` | `RateLimiter`, `AI_RATE_PER_MINUTE` (6) and `AI_RATE_BURST` (4). Key: last `x-forwarded-for` entry |
 | Everyone, per UTC day | 429 | `daily_limit` | `AI_DAILY_CAP`, default 300, in memory (a restart resets it) |
 | Provider 429, 402 or 503 | 503 | `busy` | `Retry-After` from the provider, capped at 1 hour. The provider's text never reaches the client |
-| Over 15 s | 504 | `timeout` | |
+| Over 25 s | 504 | `timeout` | |
 | Anything else from the provider | 502 | `unavailable` | Only the status code is logged. The key is never logged |
 
 ## Set it up (about 3 minutes, $0)
