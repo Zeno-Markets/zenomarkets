@@ -60,8 +60,44 @@ function depsFor(app: FastifyInstance): ToolDeps {
         return undefined;
       }
     },
+    async docs(topic) {
+      const base = process.env.NEWS_API_URL;
+      if (!base) return undefined;
+      if (!docsPage || Date.now() - docsPage.at > DOCS_TTL_MS) {
+        try {
+          const response = await fetch(`${base.replace(/\/$/, "")}/docs`, { signal: AbortSignal.timeout(6_000) });
+          if (!response.ok) return undefined;
+          docsPage = { html: await response.text(), at: Date.now() };
+        } catch {
+          return undefined;
+        }
+      }
+      const text = docsSection(docsPage.html, topic);
+      return text ? { text, asOf: new Date(docsPage.at).toISOString() } : undefined;
+    },
     now: () => new Date(),
   };
+}
+
+const DOCS_TTL_MS = 10 * 60_000;
+let docsPage: { html: string; at: number } | undefined;
+
+/// The text of `<section id="topic">` in the rendered Docs page: tags dropped, entities the page uses decoded.
+export function docsSection(html: string, topic: string): string | undefined {
+  const match = html.match(new RegExp(`<section[^>]*\\bid="${topic}"[^>]*>([\\s\\S]*?)</section>`));
+  if (!match) return undefined;
+  const text = match[1]!
+    .replace(/<(script|style)[\s\S]*?<\/\1>/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&#x27;|&#39;|&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text || undefined;
 }
 
 /// `POST /v1/ai/chat`: Ask Zeno. Read-only by construction: the tools only read, and nothing in this file can sign,

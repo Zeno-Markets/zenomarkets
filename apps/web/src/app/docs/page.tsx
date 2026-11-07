@@ -396,8 +396,8 @@ put payout  = max(strike − settlement, 0) × contract size × contracts`}</For
                     >
                         <p className={bodyText}>
                             Lending is a separate engine from the trading vault. A pair locks one stock token as
-                            collateral and lends one token against it. The pair live on testnet is TSLA collateral and USDG
-                            borrowed. It is not deployed on mainnet yet. A pair is isolated: its loans cannot draw on any other pair or on the trading
+                            collateral and lends one token against it. The live pair is TSLA collateral and USDG
+                            borrowed, on testnet and, since V2.0, on mainnet. A pair is isolated: its loans cannot draw on any other pair or on the trading
                             vault.
                         </p>
                         <p className={bodyText}>

@@ -8,6 +8,7 @@ that can write, sign or send. It needs no wallet. Cost: $0 by construction (free
 - `POST /v1/ai/chat` in `services/api` (`src/routes/ai.ts`, `src/ai.ts`). Body `{ symbol?, messages[] }`. Roles are
   `user` and `assistant` only. History is cut to the last 6 messages of at most 2,000 characters.
 - Answer `{ answer, sources: [{ tool, source, asOf }] }`. The sheet shows each source and its UTC time under the answer.
+- A risk line ends every answer built on tool data (the code adds one if the model forgets); a greeting or a refusal has none.
 - The model runs a tool loop on the server: at most **4 tool rounds** and **15 seconds** in total. After round 4 it gets
   no tools and must answer.
 - Tools (all read-only, all return `{ source, asOf, data }`):
@@ -20,6 +21,7 @@ that can write, sign or send. It needs no wallet. Cost: $0 by construction (free
 | `get_news(symbol or category)` | Market News (`/api/news` on the web app, at `NEWS_API_URL`) |
 | `explain_term(term)` | `GLOSSARY` in `packages/config/src/glossary.ts`, the same words the page shows |
 | `list_markets(group?, query?)` | `@zeno/config` market list, at most 40 rows |
+| `get_docs(topic)` | One section of the site's Docs page (`$NEWS_API_URL/docs#<topic>`), cached 10 minutes. Product questions (copy trading, lending, the ZENO token address) are answered only from it |
 
 - The system prompt is a constant (`SYSTEM_PROMPT`). The open market, the user's words and every tool result travel as
   `user` or `tool` messages, so a headline that says "ignore your instructions" is only data. Rules: answer only from
@@ -60,7 +62,7 @@ that can write, sign or send. It needs no wallet. Cost: $0 by construction (free
 bash scripts/ai-local.sh up                     # local API on :4000 and web on :3000, testnet chain
 PLAYWRIGHT_DIR=~/.npm/_npx/<hash> node scripts/e2e-ai.mjs [screens-dir]            # every state of the panel, scripted answers
 MODE=real API_URL=http://localhost:4000 PLAYWRIGHT_DIR=... node scripts/e2e-ai.mjs  # the real API and model
-API=http://localhost:4000 node scripts/ai-battery.mjs                               # 29 API cases with the real model
+API=http://localhost:4000 node scripts/ai-battery.mjs                               # 34 API cases with the real model
 ```
 
 `MODE=real` asks "Why is NVDA down today?" on NVDA-PERP at 375 px and 1440 px, checks each source line has a UTC time,

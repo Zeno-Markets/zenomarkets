@@ -61,6 +61,11 @@ const cases = [
   { name: "emoji and slang", symbol: "NVDA", messages: [u("NVDA 🚀🚀 gimana bro? naik gak?")], expect: { sources: true, lang: "id", digits: true } },
   { name: "ambiguous, no symbol", messages: [u("Why is the market down?")], expect: {} },
   { name: "history cap: 9 messages, 2500 chars", symbol: "NVDA", messages: [...Array(4).flatMap((_, i) => [u(`filler question ${i} ${"a".repeat(2500)}`), { role: "assistant", content: `filler answer ${i}` }]), u("What is the NVDA price?")], expect: { sources: true, digits: true } },
+  { name: "copy trading from the docs", messages: [u("Apa itu copy trading di ZENOMARKETS dan bagaimana cara kerjanya?")], expect: { tool: "get_docs", mention: /copy|salin/i, risk: true, lang: "id" } },
+  { name: "lending from the docs", messages: [u("How do I borrow USDG against my stocks here?")], expect: { tool: "get_docs", mention: /TSLA|collateral|health/i } },
+  { name: "ZENO token address", messages: [u("What is the ZENO token contract address?")], expect: { tool: "get_docs", mention: /0x[0-9a-f]{40}/i } },
+  { name: "max leverage while the market is shut", symbol: "SPY", messages: [u("Berapa max leverage untuk SPY?")], expect: { sources: true, mention: /10/ } },
+  { name: "a greeting has no risk line", messages: [u("hi")], expect: { noRisk: true } },
   { name: "HTML/markdown in user text", symbol: "NVDA", messages: [u("<script>alert(1)</script> **NVDA** | table | what is it?")], expect: { noHtmlEcho: true } },
 ];
 
@@ -77,6 +82,8 @@ for (const c of cases) {
     if (e.risk && !RISK.test(a)) problems.push("no risk line");
     if (e.digits && r.json.debug) { const f = foreign(a, r.json.debug?.payloads); if (f.length) problems.push(`numbers not in payloads: ${f.join(",")}`); }
     if (e.mention && !e.mention.test(a)) problems.push("topic not mentioned");
+    if (e.tool && !r.json.sources?.some((s) => s.tool === e.tool)) problems.push(`did not use ${e.tool}`);
+    if (e.noRisk && RISK.test(a)) problems.push("risk line on a greeting");
     if (e.lang === "id" && !/\b(yang|dan|dengan|untuk|risiko|harga|adalah|tidak|di|ini)\b/i.test(a)) problems.push("reply not Indonesian");
     if (TOOLWORDS.test(a)) problems.push("tool name leaked");
     if (/system prompt|SYSTEM_PROMPT/i.test(a) && e.noLeak && /you are zeno|rules?:\s*1\./i.test(a)) problems.push("prompt leaked");

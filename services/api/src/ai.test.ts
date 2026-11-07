@@ -3,7 +3,7 @@ import { createServer, type Server } from "node:http";
 import { test } from "node:test";
 import Fastify from "fastify";
 import { DailyCap, HISTORY_MESSAGES, LlmError, MAX_ROUNDS, MESSAGE_CHARS, SYSTEM_PROMPT, computeLevels, makeTools, parseChat, runChat, withRiskLine, type Bar, type Tool, type ToolDeps } from "./ai.js";
-import { registerAiRoutes } from "./routes/ai.js";
+import { docsSection, registerAiRoutes } from "./routes/ai.js";
 import { RateLimiter } from "./rfq.js";
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -54,6 +54,9 @@ function fakeDeps(over: Partial<ToolDeps> = {}): ToolDeps {
     },
     async news() {
       return { updatedAt: "2026-10-14T10:00:00.000Z", items: [{ title: "NVDA slips on chip curbs", source: "CNBC", url: "https://example.com/a", publishedAt: "2026-10-14T09:00:00.000Z", category: "stocks", tickers: ["NVDA"] }] };
+    },
+    async docs(topic) {
+      return topic === "copy" ? { text: "Copy trading mirrors another trader's new perpetual trades into a separate copy account.", asOf: "2026-10-14T11:00:00.000Z" } : undefined;
     },
     now: () => new Date("2026-10-14T12:00:00.000Z"),
     ...over,
@@ -167,8 +170,8 @@ test("an unknown tool or bad arguments reach the model as an error result, not a
   }
 });
 
-test("no tool can write: the tool names are exactly the six read tools", () => {
-  assert.deepEqual(makeTools(fakeDeps()).map((tool) => tool.name).sort(), ["explain_term", "get_candles", "get_levels", "get_market_snapshot", "get_news", "list_markets"]);
+test("no tool can write: the tool names are exactly the seven read tools", () => {
+  assert.deepEqual(makeTools(fakeDeps()).map((tool) => tool.name).sort(), ["explain_term", "get_candles", "get_docs", "get_levels", "get_market_snapshot", "get_news", "list_markets"]);
 });
 
 test("get_market_snapshot: funding with interval 0 is reported as unavailable, not as 0% and a 1970 date", async () => {
@@ -229,7 +232,9 @@ test("the system prompt carries every rule", () => {
     ["closed market is closed, with last close", /closed.*last close/s],
     ["no price targets or buy and sell advice", /no price targets and no buy, sell or hold advice/i],
     ["levels come from the tool", /get_levels.*Do not compute your own/s],
-    ["ends with a risk line", /End every analysis with one line that starts with "Risk:"/],
+    ["ends with a risk line, but not a greeting or a refusal", /End every answer about a market, a trade or a product feature with one line that starts with "Risk:"/],
+    ["product questions read the Docs page", /call get_docs with the closest topic and answer only from it/],
+    ["names the source as the tool gives it", /written exactly as the tool result's "source" field gives it/],
     ["refuses transactions", /Refuse to execute, place, sign or prepare any transaction/],
     ["replies in the user's language, all of it", /Indonesian or English.*one language for the whole reply/s],
     ["a why question reads the news and never guesses a cause", /why a market moved.*get_news.*Never guess a cause/s],
@@ -302,7 +307,24 @@ test("a closed market is reported as closed with its last close, never as a live
   assert.equal(data.state, "closed");
   assert.equal(data.lastClose, 175.5);
   assert.equal(data.markPrice, undefined);
+  assert.equal(data.maxLeverage, 5, "a closed market still says how much leverage it allows");
   assert.equal(result.asOf, "2026-10-13T20:00:00.000Z");
+});
+
+test("get_docs reads one Docs section, and says so when a topic is unknown or unreadable", async () => {
+  const tool = makeTools(fakeDeps()).find((candidate) => candidate.name === "get_docs")!;
+  const result = await tool.run({ topic: "copy" });
+  assert.equal(result.source, "ZENOMARKETS Docs");
+  assert.match((result.data as { text: string }).text, /separate copy account/);
+  await assert.rejects(tool.run({ topic: "staking" }), /unknown topic/);
+  await assert.rejects(tool.run({ topic: "lending" }), /unavailable/);
+});
+
+test("docsSection: the text of one section, tags dropped, entities decoded", () => {
+  const html = '<main><section id="overview"><h2>Overview</h2><p>One vault.</p></section><section id="copy" class="x"><h2>Copy trading</h2><p>Your main account isn&#x27;t touched &amp; <script>alert(1)</script>stays yours.</p></section></main>';
+  assert.equal(docsSection(html, "copy"), "Copy trading Your main account isn't touched & stays yours.");
+  assert.equal(docsSection(html, "overview"), "Overview One vault.");
+  assert.equal(docsSection(html, "lending"), undefined);
 });
 
 test("explain_term reads the glossary and says so when a term is unknown", async () => {
@@ -500,5 +522,22 @@ test("a bad body is 400 and costs no daily request; no key is 503 'disabled'", a
     await app.close();
     await off.app.close();
     await llm.close();
+  }
+});
+
+test("a greeting that read no data gets no risk line; an answer built on data always does", async () => {
+  const greet = await fakeLlm(() => say("Hi! How can I help you with the markets today?"));
+  try {
+    const result = await runChat({ config: { baseUrl: greet.url, apiKey: "k", model: "m" }, tools: makeTools(fakeDeps()), request: ask("hi") });
+    assert.equal(result.answer, "Hi! How can I help you with the markets today?");
+  } finally {
+    await greet.close();
+  }
+  const data = await fakeLlm((_, index) => (index === 0 ? call("get_market_snapshot", { symbol: "NVDA" }) : say("NVDA is at 181.25.")));
+  try {
+    const result = await runChat({ config: { baseUrl: data.url, apiKey: "k", model: "m" }, tools: makeTools(fakeDeps()), request: ask("NVDA price?") });
+    assert.match(result.answer, /\n\nRisk: /);
+  } finally {
+    await data.close();
   }
 });
