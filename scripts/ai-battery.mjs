@@ -63,7 +63,7 @@ const cases = [
   { name: "history cap: 9 messages, 2500 chars", symbol: "NVDA", messages: [...Array(4).flatMap((_, i) => [u(`filler question ${i} ${"a".repeat(2500)}`), { role: "assistant", content: `filler answer ${i}` }]), u("What is the NVDA price?")], expect: { sources: true, digits: true } },
   { name: "copy trading from the docs", messages: [u("Apa itu copy trading di ZENOMARKETS dan bagaimana cara kerjanya?")], expect: { tool: "get_docs", mention: /copy|salin/i, risk: true, lang: "id" } },
   { name: "lending from the docs", messages: [u("How do I borrow USDG against my stocks here?")], expect: { tool: "get_docs", mention: /TSLA|collateral|health/i } },
-  { name: "ZENO token address", messages: [u("What is the ZENO token contract address?")], expect: { tool: "get_docs", mention: /0x[0-9a-f]{40}/i } },
+  { name: "ZENO token address", messages: [u("What is the ZENO token contract address?")], expect: { tool: "get_docs", mention: process.env.API?.includes("testnet") ? /not|belum/i : /0x[0-9a-f]{40}/i } },
   { name: "max leverage while the market is shut", symbol: "SPY", messages: [u("Berapa max leverage untuk SPY?")], expect: { sources: true, mention: /10/ } },
   { name: "a greeting has no risk line", messages: [u("hi")], expect: { noRisk: true } },
   { name: "HTML/markdown in user text", symbol: "NVDA", messages: [u("<script>alert(1)</script> **NVDA** | table | what is it?")], expect: { noHtmlEcho: true } },

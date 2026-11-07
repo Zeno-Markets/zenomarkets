@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
 import { test } from "node:test";
 import Fastify from "fastify";
-import { DailyCap, HISTORY_MESSAGES, LlmError, MAX_ROUNDS, MESSAGE_CHARS, SYSTEM_PROMPT, computeLevels, makeTools, parseChat, runChat, withRiskLine, type Bar, type Tool, type ToolDeps } from "./ai.js";
+import { DailyCap, HISTORY_MESSAGES, LlmError, MAX_ROUNDS, MESSAGE_CHARS, SYSTEM_PROMPT, computeLevels, makeTools, parseChat, runChat, withRiskLine, withoutRiskLine, type Bar, type Tool, type ToolDeps } from "./ai.js";
 import { docsSection, registerAiRoutes } from "./routes/ai.js";
 import { RateLimiter } from "./rfq.js";
 
@@ -526,7 +526,7 @@ test("a bad body is 400 and costs no daily request; no key is 503 'disabled'", a
 });
 
 test("a greeting that read no data gets no risk line; an answer built on data always does", async () => {
-  const greet = await fakeLlm(() => say("Hi! How can I help you with the markets today?"));
+  const greet = await fakeLlm(() => say("Hi! How can I help you with the markets today?  \nRisk: Market prices can move quickly."));
   try {
     const result = await runChat({ config: { baseUrl: greet.url, apiKey: "k", model: "m" }, tools: makeTools(fakeDeps()), request: ask("hi") });
     assert.equal(result.answer, "Hi! How can I help you with the markets today?");
@@ -540,4 +540,10 @@ test("a greeting that read no data gets no risk line; an answer built on data al
   } finally {
     await data.close();
   }
+});
+
+test("withoutRiskLine drops only a closing risk line", () => {
+  assert.equal(withoutRiskLine("Hi!\nRisk: prices move."), "Hi!");
+  assert.equal(withoutRiskLine("Halo!  \nRisiko: harga bergerak."), "Halo!");
+  assert.equal(withoutRiskLine("The main risk: leverage. Ask me more."), "The main risk: leverage. Ask me more.");
 });
