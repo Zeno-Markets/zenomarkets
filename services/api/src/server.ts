@@ -5,6 +5,7 @@ import Fastify from "fastify";
 import { createPublicClient, http, type PublicClient } from "viem";
 import { registerCors } from "./cors.js";
 import { resolveCreditPair } from "./credit.js";
+import { registerAiRoutes } from "./routes/ai.js";
 import { registerCopyRoutes } from "./routes/copy.js";
 import { registerCreditRoutes } from "./routes/credit.js";
 import { registerAlertRoutes } from "./routes/alerts.js";
@@ -52,6 +53,7 @@ export function buildServer() {
     if (isReleased("copyTrading", release)) registerCopyRoutes(instance, zeno);
     if (isReleased("lending", release)) registerCreditRoutes(instance, createPublicClient({ transport: http(rpcUrl) }), resolveCreditPair(zeno.addresses, process.env.CREDIT_PAIR_ADDRESS));
     registerTradeRoutes(instance, zeno);
+    registerAiRoutes(instance);
     if (isReleased("rfq", release)) registerRfqRoutes(instance, zeno);
     registerWebSocket(instance, zeno);
   });

@@ -781,6 +781,8 @@ const ROADMAP = [
   },
   { tag: "V2.0", title: "Capital", items: ["Lend USDG", "Borrow USDG against stocks", "Options strategy builder", "RFQ block trades"] },
   { tag: "V3.0", title: "Social", items: ["Copy trading", "Trader profiles", "Subaccounts"] },
+  // Not gated by RELEASE: it ships on every network the day it deploys (docs/AI_ASSISTANT.md).
+  { tag: "V3.1", title: "Ask Zeno", items: ["AI market assistant on every app page", "Reads prices, charts and news, cites each source", "Read only: it cannot trade"], now: true },
 ];
 
 /// The roadmap cards scroll sideways when they do not fit: drag them with a mouse, use the arrows, and a bar shows

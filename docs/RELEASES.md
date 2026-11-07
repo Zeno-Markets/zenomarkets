@@ -9,6 +9,7 @@ it.
 | V1.0 | Perpetuals, options, every listed market, ZENO (its address shown as CA), the fee share set aside for ZENO buybacks, portfolio, activity, alerts, leaderboard, PnL cards |
 | V2.0 | Lending (lend USDG, borrow USDG against stocks), the options strategy builder, RFQ block trades |
 | V3.0 | Copy trading, trader profiles (copy trading runs on subaccounts) |
+| V3.1 | Ask Zeno, the read-only AI market assistant (not gated by `RELEASE`: on every network once deployed) |
 
 ## How a release is switched on
 
@@ -185,6 +186,19 @@ executor followers authorise.
 2. **Switch on:** set `RELEASE=3`, push to `mainnet` and run `vps-deploy.sh mainnet`.
 3. **Check:** the menu shows Copy trading; a trader's profile opens from the leaderboard;
    `/v1/copy/config` answers 200 with the executor address; the keeper log says `copy trading on`.
+
+## V3.1: Ask Zeno
+
+Nothing on chain and no `RELEASE` change: the assistant only reads, so it ships on testnet and mainnet together.
+`docs/AI_ASSISTANT.md` has the details.
+
+1. **Key:** add `LLM_API_KEY=<free-tier Groq key>` and `NEWS_API_URL=https://zenomarkets.tech` to
+   `/opt/zeno/mainnet/zeno.env` (testnet: `NEWS_API_URL=https://testnet.zenomarkets.tech`). Without the key the panel
+   says it is not switched on and the rest of the site is unchanged.
+2. **Ship:** push to `testnet` and `mainnet`, run `vps-deploy.sh` for each.
+3. **Check:** the round button shows on every app page (not the landing); a question on NVDA-PERP answers with
+   sources and a risk line; `curl -s -X POST https://zenomarkets.tech/v1/ai/chat -H 'content-type: application/json'
+   -d '{"messages":[{"role":"user","content":"hi"}]}'` answers 200.
 
 ## Known limits
 
