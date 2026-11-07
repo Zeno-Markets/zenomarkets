@@ -14,7 +14,7 @@ import { LISTED_CONTRACTS } from "@/lib/contracts";
 import { networkName } from "@/lib/network";
 import { PRODUCT_LINE } from "@/lib/site";
 import { X_URL } from "@/lib/social";
-import { CLASS_LABEL, CLASS_ORDER, useCardMarkets, useSparks, type AssetClass, type CardMarket } from "./data";
+import { CLASS_ORDER, CLASS_PLURAL, useCardMarkets, useSparks, type AssetClass, type CardMarket } from "./data";
 import { LetterHover, Magnetic, SectionRail, Tilt, pointerVars, resetPointerVars, useSmoothScroll } from "./fx";
 import { fmtPct, fmtUsd, HeroCarousel } from "./HeroCarousel";
 import { LogoOrb, OrbSlot } from "./LogoOrb";
@@ -434,7 +434,7 @@ function Universe({ markets }: { markets: CardMarket[] }) {
         <div className="mt-4 flex flex-wrap justify-center gap-1.5">
           {counts.map(([c, n]) => (
             <Link key={c} href="#markets" className="inline-flex items-center justify-center rounded-full border border-line px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted transition-colors hover:border-accent-fg hover:bg-accent hover:text-accent-ink">
-              {CLASS_LABEL[c]}s · {n}
+              {CLASS_PLURAL[c]} · {n}
             </Link>
           ))}
         </div>
@@ -750,7 +750,7 @@ function MarketsExplorer({ markets }: { markets: CardMarket[] }) {
               onClick={() => setTab(c)}
               className={`h-10 min-w-[7.5rem] rounded-full px-5 text-sm transition-[background-color,color,box-shadow,border-color,transform] duration-200 active:scale-95 ${tab === c ? "bg-accent text-accent-ink shadow-accent-glow" : "border border-line bg-raised text-muted hover:border-text hover:text-text"}`}
             >
-              {CLASS_LABEL[c]}s <span className="ml-1 opacity-60">{markets.filter((m) => m.assetClass === c).length}</span>
+              {CLASS_PLURAL[c]} <span className="ml-1 opacity-60">{markets.filter((m) => m.assetClass === c).length}</span>
             </button>
           ))}
         </div>

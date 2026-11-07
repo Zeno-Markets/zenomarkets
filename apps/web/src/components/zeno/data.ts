@@ -9,6 +9,8 @@ import { symbolOf } from "@/lib/market";
 export type AssetClass = "stock" | "etf" | "crypto" | "commodity";
 
 export const CLASS_LABEL: Record<AssetClass, string> = { stock: "Stock", etf: "ETF", crypto: "Crypto", commodity: "Commodity" };
+/// The tab and chip names. Not `${CLASS_LABEL[c]}s`: that spelled "Commoditys".
+export const CLASS_PLURAL: Record<AssetClass, string> = { stock: "Stocks", etf: "ETFs", crypto: "Cryptos", commodity: "Commodities" };
 export const CLASS_ORDER: AssetClass[] = ["stock", "etf", "crypto", "commodity"];
 
 export interface CardMarket {
