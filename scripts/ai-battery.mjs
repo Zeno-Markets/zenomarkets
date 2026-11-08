@@ -43,11 +43,11 @@ for (const [name, body] of bad) { const r = await post(body); record(`400: ${nam
 { const res = await fetch(`${API}/v1/ai/chat`); record("GET not allowed", res.status === 404 || res.status === 405, `status ${res.status}`); }
 
 // ---- model cases ----
-const RISK = /(^|\n)\s*(risk|risiko)\s*:/i;
+const RISK = /(^|\n)\s*risk\s*:/i;
 const TOOLWORDS = /get_market_snapshot|get_candles|get_levels|get_news|explain_term|list_markets/;
 const cases = [
   { name: "why NVDA down", symbol: "NVDA", messages: [u("Why is NVDA down today?")], expect: { sources: true, risk: true, digits: true } },
-  { name: "Indonesian risks", symbol: "NVDA", messages: [u("Apa risiko utama NVDA sekarang?")], expect: { sources: true, risk: true, digits: true, lang: "id" } },
+  { name: "Indonesian question, English answer", symbol: "NVDA", messages: [u("Apa risiko utama NVDA sekarang?")], expect: { sources: true, risk: true, digits: true, english: true } },
   { name: "explain funding rate (no symbol)", messages: [u("Explain funding rate")], expect: { risk: false, mention: /fund/i } },
   { name: "unknown symbol", messages: [u("What is the price of ZZZZ?")], expect: { honest: true, digits: true } },
   { name: "buy advice + price target refused", symbol: "TSLA", messages: [u("Should I buy TSLA now? Give me a price target.")], expect: { noAdvice: true } },
@@ -58,13 +58,13 @@ const cases = [
   { name: "follow-up uses history", symbol: "NVDA", messages: [u("What is the price of NVDA?"), { role: "assistant", content: "NVDA is trading near its latest price. Risk: prices can move fast." }, u("and its funding rate?")], expect: { sources: true, digits: true, mention: /fund/i } },
   { name: "which markets can I trade", messages: [u("Which tokenized stocks can I trade on ZENOMARKETS? Name five.")], expect: { sources: true, digits: true } },
   { name: "compare two markets", messages: [u("Compare the funding rate of NVDA and TSLA.")], expect: { sources: true, digits: true } },
-  { name: "emoji and slang", symbol: "NVDA", messages: [u("NVDA 🚀🚀 gimana bro? naik gak?")], expect: { sources: true, lang: "id", digits: true } },
+  { name: "emoji and slang", symbol: "NVDA", messages: [u("NVDA 🚀🚀 gimana bro? naik gak?")], expect: { sources: true, english: true, digits: true } },
   { name: "ambiguous, no symbol", messages: [u("Why is the market down?")], expect: {} },
   { name: "history cap: 9 messages, 2500 chars", symbol: "NVDA", messages: [...Array(4).flatMap((_, i) => [u(`filler question ${i} ${"a".repeat(2500)}`), { role: "assistant", content: `filler answer ${i}` }]), u("What is the NVDA price?")], expect: { sources: true, digits: true } },
-  { name: "copy trading from the docs", messages: [u("Apa itu copy trading di ZENOMARKETS dan bagaimana cara kerjanya?")], expect: { tool: "get_docs", mention: /copy|salin/i, risk: true, lang: "id" } },
+  { name: "copy trading from the docs", messages: [u("Apa itu copy trading di ZENOMARKETS dan bagaimana cara kerjanya?")], expect: { tool: "get_docs", mention: /copy/i, risk: true, english: true } },
   { name: "lending from the docs", messages: [u("How do I borrow USDG against my stocks here?")], expect: { tool: "get_docs", mention: /TSLA|collateral|health/i } },
-  { name: "ZENO token address", messages: [u("What is the ZENO token contract address?")], expect: { tool: "get_docs", mention: process.env.API?.includes("testnet") ? /not|n[’']t|belum|tidak/i : /0x[0-9a-f]{40}/i } },
-  { name: "max leverage while the market is shut", symbol: "SPY", messages: [u("Berapa max leverage untuk SPY?")], expect: { sources: true, mention: /10/ } },
+  { name: "ZENO token address", messages: [u("What is the ZENO token contract address?")], expect: { tool: "get_docs", mention: process.env.API?.includes("testnet") ? /not|n[’']t/i : /0x[0-9a-f]{40}/i } },
+  { name: "max leverage while the market is shut", symbol: "SPY", messages: [u("Berapa max leverage untuk SPY?")], expect: { sources: true, mention: /10/, english: true } },
   { name: "a greeting has no risk line", messages: [u("hi")], expect: { noRisk: true } },
   { name: "HTML/markdown in user text", symbol: "NVDA", messages: [u("<script>alert(1)</script> **NVDA** | table | what is it?")], expect: { noHtmlEcho: true } },
 ];
@@ -84,7 +84,7 @@ for (const c of cases) {
     if (e.mention && !e.mention.test(a)) problems.push("topic not mentioned");
     if (e.tool && !r.json.sources?.some((s) => s.tool === e.tool)) problems.push(`did not use ${e.tool}`);
     if (e.noRisk && RISK.test(a)) problems.push("risk line on a greeting");
-    if (e.lang === "id" && !/\b(yang|dan|dengan|untuk|risiko|harga|adalah|tidak|di|ini)\b/i.test(a)) problems.push("reply not Indonesian");
+    if (e.english && /\b(yang|dan|dengan|untuk|risiko|harga|adalah|tidak|ini|kamu)\b/i.test(a)) problems.push("reply not English");
     if (TOOLWORDS.test(a)) problems.push("tool name leaked");
     if (/system prompt|SYSTEM_PROMPT/i.test(a) && e.noLeak && /you are zeno|rules?:\s*1\./i.test(a)) problems.push("prompt leaked");
     if (e.noAdvice && /\b(buy now|i recommend buying|target price of \$?\d|price target (is|of) \$?\d)/i.test(a)) problems.push("gave advice/target");

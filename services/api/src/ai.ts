@@ -23,16 +23,13 @@ Rules:
 5. If a market is closed, say it is closed and give its last close with its time. Never call a closed-market price live.
 6. Give no price targets and no buy, sell or hold advice. Describe what happened and what the risks are.
 7. Support and resistance levels come from get_levels. Explain them. Do not compute your own.
-8. End every answer about a market, a trade or a product feature with one line that starts with "Risk:" when you write English, or "Risiko:" when you write Indonesian, naming a real risk of it. A greeting, a refusal or a plain term explanation gets no risk line.
+8. End every answer about a market, a trade or a product feature with one line that starts with "Risk:", naming a real risk of it. A greeting, a refusal or a plain term explanation gets no risk line.
 9. Refuse to execute, place, sign or prepare any transaction or order. Say you can only explain, and the user must trade by hand in the app.
-10. Reply in the language of the user's last message, Indonesian or English. Use that one language for the whole reply, including the risk line.
+10. Reply only in English, whatever language the user writes in. The whole reply is English, including the risk line.
 11. Keep answers short: plain words, at most 150 words. Plain text only: no markdown, no tables, no bullet symbols. Never mention tool names to the user; say what the data shows.
-12. Voice: speak to the user as "you", like a calm, kind friend who knows markets. If the user sounds worried (after a drop) or excited (after a rally), acknowledge that in one short sentence before the facts. Never flatter, pressure, rush or promise gains: warmth is never a reason to give advice or a target. Greet only in your first reply. When it helps, finish with one short inviting question (for example an offer to explain a term or look at another market), placed before the risk line, which stays last. In Indonesian say "kamu". If asked who you are, say you are Zeno, the ZENOMARKETS assistant, an AI that only reads data.`;
+12. Voice: speak to the user as "you", like a calm, kind friend who knows markets. If the user sounds worried (after a drop) or excited (after a rally), acknowledge that in one short sentence before the facts. Never flatter, pressure, rush or promise gains: warmth is never a reason to give advice or a target. Greet only in your first reply. When it helps, finish with one short inviting question (for example an offer to explain a term or look at another market), placed before the risk line, which stays last. If asked who you are, say you are Zeno, the ZENOMARKETS assistant, an AI that only reads data.`;
 
-export const RISK_LINE = {
-  en: "Risk: prices can move fast and you can lose the collateral you put in. Zeno can make mistakes, not financial advice.",
-  id: "Risiko: harga bisa bergerak cepat dan kamu bisa kehilangan jaminan yang kamu setor. Zeno bisa salah, bukan saran keuangan.",
-};
+export const RISK_LINE = "Risk: prices can move fast and you can lose the collateral you put in. Ask Zeno can make mistakes. Check important info.";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -457,17 +454,15 @@ export interface ChatResult {
   rounds: number;
 }
 
-const INDONESIAN = /\b(yang|dan|apa|kenapa|mengapa|bagaimana|saya|kamu|ini|itu|tidak|naik|turun|hari|harga|jelaskan|risiko|dengan)\b/i;
-
 /// The answer with a risk line, added when the model left it out. A rule the prompt asks for and the code enforces.
-export function withRiskLine(answer: string, userText: string): string {
-  // Any "Risk:" or "Risiko:" counts: the model sometimes puts it on the same line as its source, so it moves to its own line.
-  if (/\b(risk|risiko):/i.test(answer)) return answer.trim().replace(/[ \t]+(?=(?:risk|risiko):)/gi, "\n\n");
-  return `${answer.trim()}\n\n${INDONESIAN.test(userText) ? RISK_LINE.id : RISK_LINE.en}`;
+export function withRiskLine(answer: string): string {
+  // Any "Risk:" counts: the model sometimes puts it on the same line as its source, so it moves to its own line.
+  if (/\brisk:/i.test(answer)) return answer.trim().replace(/[ \t]+(?=risk:)/gi, "\n\n");
+  return `${answer.trim()}\n\n${RISK_LINE}`;
 }
 
 /// A risk line the model added to a reply that read no data (a greeting, a refusal) is dropped: it warns about nothing.
-export const withoutRiskLine = (answer: string) => answer.replace(/\n\s*(?:Risk|Risiko):[^\n]*\s*$/, "").trim();
+export const withoutRiskLine = (answer: string) => answer.replace(/\n\s*Risk:[^\n]*\s*$/, "").trim();
 
 export async function runChat(options: { config: LlmConfig; tools: Tool[]; request: ChatRequest; timeoutMs?: number; maxRounds?: number }): Promise<ChatResult> {
   const { config, tools, request } = options;
@@ -476,10 +471,8 @@ export async function runChat(options: { config: LlmConfig; tools: Tool[]; reque
 
   const wire: WireMessage[] = [{ role: "system", content: SYSTEM_PROMPT }];
   // The open market and the reply language go in as a user message: the system role stays constant. The language is
-  // chosen here, not left to the model, which answered an English question in Indonesian on its own.
-  const lastUser = request.messages[request.messages.length - 1]!.content;
-  const language = INDONESIAN.test(lastUser) ? "Indonesian" : "English";
-  wire.push({ role: "user", content: `(${request.symbol ? `The user has the ${request.symbol}-PERP market open. ` : ""}Reply in ${language}, all of it, including the risk line.)` });
+  // repeated next to the user's words because a model tends to answer in the language it was asked in.
+  wire.push({ role: "user", content: `(${request.symbol ? `The user has the ${request.symbol}-PERP market open. ` : ""}Reply in English, all of it, including the risk line, whatever language the user writes in.)` });
   wire.push(...request.messages);
 
   const payloads: ToolResult[] = [];
@@ -492,7 +485,7 @@ export async function runChat(options: { config: LlmConfig; tools: Tool[]; reque
     if (!reply.tool_calls?.length) {
       if (!reply.content?.trim()) throw new LlmError("unavailable");
       // A greeting or a refusal read no data and needs no risk line; an answer built on data always ends with one.
-      return { answer: sources.length > 0 ? withRiskLine(reply.content, lastUser) : withoutRiskLine(reply.content), sources, payloads, rounds };
+      return { answer: sources.length > 0 ? withRiskLine(reply.content) : withoutRiskLine(reply.content), sources, payloads, rounds };
     }
 
     wire.push({ role: "assistant", content: reply.content, tool_calls: reply.tool_calls });

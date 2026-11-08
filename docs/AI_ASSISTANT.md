@@ -26,7 +26,8 @@ that can write, sign or send. It needs no wallet. Cost: $0 by construction (free
 - The system prompt is a constant (`SYSTEM_PROMPT`). The open market, the user's words and every tool result travel as
   `user` or `tool` messages, so a headline that says "ignore your instructions" is only data. Rules: answer only from
   tool data, say a missing number is unavailable, no price targets and no buy or sell advice, a risk line to finish
-  (the code adds one if the model forgets), refuse transactions, reply in Indonesian or English, plain text.
+  (the code adds one if the model forgets), refuse transactions, reply only in English (whatever language the
+  question is in), plain text.
 
 ## Limits and errors
 

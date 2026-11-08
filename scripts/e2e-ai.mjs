@@ -185,7 +185,7 @@ async function real(browser, size) {
   const { answer, sources, debug } = captured.body;
   const shown = await dialog.locator("ul li").allInnerTexts();
   check(`${width}: answer cites sources with timestamps`, sources.length > 0 && shown.length === sources.length && shown.every((line) => /UTC, \d{1,2} \w{3}$/.test(line)), shown.join(" | "));
-  check(`${width}: answer ends with a risk line`, /(^|\n)(Risk|Risiko):/i.test(answer.trim().split("\n").pop()));
+  check(`${width}: answer ends with a risk line`, /(^|\n)Risk:/i.test(answer.trim().split("\n").pop()));
   check(`${width}: tool payloads were returned (server has AI_DEBUG=true)`, Array.isArray(debug?.payloads) && debug.payloads.length > 0);
   if (Array.isArray(debug?.payloads)) {
     const foreign = foreignNumbers(answer, debug.payloads);

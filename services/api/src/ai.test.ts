@@ -236,7 +236,7 @@ test("the system prompt carries every rule", () => {
     ["product questions read the Docs page", /call get_docs with the closest topic and answer only from it/],
     ["names the source as the tool gives it", /written exactly as the tool result's "source" field gives it/],
     ["refuses transactions", /Refuse to execute, place, sign or prepare any transaction/],
-    ["replies in the user's language, all of it", /Indonesian or English.*one language for the whole reply/s],
+    ["replies only in English, all of it", /Reply only in English, whatever language the user writes in/],
     ["a why question reads the news and never guesses a cause", /why a market moved.*get_news.*Never guess a cause/s],
     ["is Zeno, a personal and kind assistant", /You are Zeno, the personal assistant.*cares about the person asking/s],
     ["warmth is never advice, and the risk line stays last", /warmth is never a reason to give advice or a target.*risk line, which stays last/s],
@@ -245,24 +245,23 @@ test("the system prompt carries every rule", () => {
   for (const [name, pattern] of rules) assert.match(SYSTEM_PROMPT, pattern, name);
 });
 
-test("the reply language is set by the code from the user's words", async () => {
-  const llm = await fakeLlm(() => say("Halo.\nRisiko: x."));
+test("a question in another language still asks the model for English", async () => {
+  const llm = await fakeLlm(() => say("Hello."));
   try {
     await runChat({ config: { baseUrl: llm.url, apiKey: "k", model: "m" }, tools: makeTools(fakeDeps()), request: ask("Kenapa NVDA turun hari ini?") });
-    assert.match(llm.seen[0]!.messages[1]!.content!, /Reply in Indonesian/);
+    assert.match(llm.seen[0]!.messages[1]!.content!, /Reply in English/);
+    assert.doesNotMatch(JSON.stringify(llm.seen[0]!.messages), /Indonesian/);
   } finally {
     await llm.close();
   }
 });
 
-test("an answer with no risk line gets one, in the user's language", () => {
-  assert.match(withRiskLine("NVDA fell.", "Why is NVDA down?"), /\nRisk: /);
-  assert.match(withRiskLine("NVDA turun.", "Kenapa NVDA turun hari ini?"), /\nRisiko: /);
+test("an answer with no risk line gets the English one", () => {
+  assert.equal(withRiskLine("NVDA fell."), "NVDA fell.\n\nRisk: prices can move fast and you can lose the collateral you put in. Ask Zeno can make mistakes. Check important info.");
   const done = "NVDA fell.\nRisk: it can fall more.";
-  assert.equal(withRiskLine(done, "Why?"), done);
+  assert.equal(withRiskLine(done), done);
   const inline = "NVDA fell. Source: Zeno oracle. Risk: it can fall more.";
-  assert.equal(withRiskLine(inline, "Why?"), "NVDA fell. Source: Zeno oracle.\n\nRisk: it can fall more.", "an inline risk line is not added twice, and moves to its own line");
-  assert.equal(withRiskLine("Harga turun. Risiko: bisa turun lagi.", "Kenapa?"), "Harga turun.\n\nRisiko: bisa turun lagi.");
+  assert.equal(withRiskLine(inline), "NVDA fell. Source: Zeno oracle.\n\nRisk: it can fall more.", "an inline risk line is not added twice, and moves to its own line");
 });
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -544,6 +543,6 @@ test("a greeting that read no data gets no risk line; an answer built on data al
 
 test("withoutRiskLine drops only a closing risk line", () => {
   assert.equal(withoutRiskLine("Hi!\nRisk: prices move."), "Hi!");
-  assert.equal(withoutRiskLine("Halo!  \nRisiko: harga bergerak."), "Halo!");
+  assert.equal(withoutRiskLine("Hi!  \nRisk: prices move."), "Hi!");
   assert.equal(withoutRiskLine("The main risk: leverage. Ask me more."), "The main risk: leverage. Ask me more.");
 });
