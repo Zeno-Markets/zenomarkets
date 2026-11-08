@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
 import { test } from "node:test";
 import Fastify from "fastify";
-import { DailyCap, HISTORY_MESSAGES, LlmError, MAX_ROUNDS, MESSAGE_CHARS, SYSTEM_PROMPT, computeLevels, makeTools, parseChat, runChat, withRiskLine, withoutRiskLine, type Bar, type Tool, type ToolDeps } from "./ai.js";
+import { DailyCap, HISTORY_MESSAGES, LlmError, MAX_ROUNDS, MESSAGE_CHARS, SYSTEM_PROMPT, computeLevels, makeTools, parseChat, runChat, withRiskLine, withSources, withoutRiskLine, type Bar, type Tool, type ToolDeps } from "./ai.js";
 import { docsSection, registerAiRoutes } from "./routes/ai.js";
 import { RateLimiter } from "./rfq.js";
 
@@ -69,10 +69,10 @@ const ask = (text: string, symbol?: string) => ({ symbol, messages: [{ role: "us
 // The model loop
 
 test("a tool call is run and its result goes back to the model as a tool message", async () => {
-  const llm = await fakeLlm((_, index) => (index === 0 ? call("get_market_snapshot", { symbol: "NVDA" }) : say("NVDA is down 3.12% (Zeno oracle).\nRisk: volatile.")));
+  const llm = await fakeLlm((_, index) => (index === 0 ? call("get_market_snapshot", { symbol: "NVDA" }) : say("NVDA is down 3.12% (Source: Zeno oracle).\nRisk: volatile.")));
   try {
     const result = await runChat({ config: { baseUrl: llm.url, apiKey: "k", model: "m" }, tools: makeTools(fakeDeps()), request: ask("Why is NVDA down today?", "NVDA") });
-    assert.equal(result.answer, "NVDA is down 3.12% (Zeno oracle).\nRisk: volatile.");
+    assert.equal(result.answer, "NVDA is down 3.12% (Source: Zeno oracle).\nRisk: volatile.");
     assert.equal(result.rounds, 1);
     assert.deepEqual(result.sources.map((source) => [source.tool, source.source]), [["get_market_snapshot", "ZENOMARKETS oracle and indexer"]]);
     assert.equal(llm.seen.length, 2);
@@ -102,14 +102,14 @@ test("the system prompt is the constant text, the open market is a user message"
 });
 
 test("the tool rounds stop at four, then the model must answer without tools", async () => {
-  const llm = await fakeLlm((body) => (body.tools ? call("list_markets", {}) : say("Done.\nRisk: x.")));
+  const llm = await fakeLlm((body) => (body.tools ? call("list_markets", {}) : say("Done. Source: the list.\nRisk: x.")));
   try {
     const result = await runChat({ config: { baseUrl: llm.url, apiKey: "k", model: "m" }, tools: makeTools(fakeDeps()), request: ask("loop") });
     assert.equal(MAX_ROUNDS, 4);
     assert.equal(llm.seen.length, MAX_ROUNDS + 1);
     assert.equal(llm.seen.filter((body) => body.tools).length, MAX_ROUNDS);
     assert.equal(llm.seen[MAX_ROUNDS]!.tools, undefined);
-    assert.equal(result.answer, "Done.\nRisk: x.");
+    assert.equal(result.answer, "Done. Source: the list.\nRisk: x.");
   } finally {
     await llm.close();
   }
@@ -148,7 +148,7 @@ test("the time budget is shared by all rounds, not given to each", async () => {
 test("the tool calls of one round run together, and answer in the model's order", async () => {
   const slow = (name: string): Tool => ({ name, description: "", parameters: { type: "object" }, run: async () => { await new Promise((resolve) => setTimeout(resolve, 150)); return { source: name, asOf: "2026-10-14T00:00:00.000Z", data: name }; } });
   const two: Reply = { body: { choices: [{ message: { role: "assistant", content: null, tool_calls: [{ id: "a", type: "function", function: { name: "one", arguments: "{}" } }, { id: "b", type: "function", function: { name: "two", arguments: "{}" } }] } }] } };
-  const llm = await fakeLlm((_, index) => (index === 0 ? two : say("Done.\nRisk: x.")));
+  const llm = await fakeLlm((_, index) => (index === 0 ? two : say("Done. Source: the list.\nRisk: x.")));
   try {
     const started = Date.now();
     const result = await runChat({ config: { baseUrl: llm.url, apiKey: "k", model: "m" }, tools: [slow("one"), slow("two")], request: ask("both") });
@@ -174,16 +174,19 @@ test("no tool can write: the tool names are exactly the seven read tools", () =>
   assert.deepEqual(makeTools(fakeDeps()).map((tool) => tool.name).sort(), ["explain_term", "get_candles", "get_docs", "get_levels", "get_market_snapshot", "get_news", "list_markets"]);
 });
 
-test("get_market_snapshot: funding with interval 0 is reported as unavailable, not as 0% and a 1970 date", async () => {
+test("get_market_snapshot: interval 0 is the contract's one-hour default, a 0 rate is Balanced, and no 1970 date", async () => {
   const snapshot = makeTools(fakeDeps()).find((tool) => tool.name === "get_market_snapshot")!;
   const live = (await snapshot.run({ symbol: "NVDA" })).data as Record<string, unknown>;
   assert.equal(live.fundingRatePct, 0.05);
   assert.equal(live.fundingNote, undefined);
   const base = fakeDeps();
-  const unset = makeTools(fakeDeps({ get: async (path) => (path === "/v1/perps/NVDA/funding" ? { status: 200, body: { currentFundingRateBps: "0", fundingIntervalSeconds: "0", nextFundingTimestamp: "3600" } } : base.get(path)) })).find((tool) => tool.name === "get_market_snapshot")!;
-  const data = (await unset.run({ symbol: "NVDA" })).data as Record<string, unknown>;
-  assert.deepEqual([data.fundingRatePct, data.fundingIntervalHours, data.nextFundingAt], [null, null, null]);
-  assert.match(String(data.fundingNote), /not available/);
+  const withFunding = (body: unknown, status = 200) => makeTools(fakeDeps({ get: async (path) => (path === "/v1/perps/NVDA/funding" ? { status, body } : base.get(path)) })).find((tool) => tool.name === "get_market_snapshot")!;
+  const data = (await withFunding({ currentFundingRateBps: "0", fundingIntervalSeconds: "0", nextFundingTimestamp: "3600" }).run({ symbol: "NVDA" })).data as Record<string, unknown>;
+  assert.deepEqual([data.fundingRatePct, data.fundingIntervalHours, data.nextFundingAt], [0, 1, null]);
+  assert.match(String(data.fundingNote), /pay each other nothing.*Balanced/);
+  const failed = (await withFunding({ error: "x" }, 500).run({ symbol: "NVDA" })).data as Record<string, unknown>;
+  assert.deepEqual([failed.fundingRatePct, failed.fundingIntervalHours, failed.nextFundingAt], [null, null, null]);
+  assert.match(String(failed.fundingNote), /could not be read/);
 });
 
 test("list_markets: a filter that matches nothing falls back to the full list and says so", async () => {
@@ -237,6 +240,7 @@ test("the system prompt carries every rule", () => {
     ["names the source as the tool gives it", /written exactly as the tool result's "source" field gives it/],
     ["refuses transactions", /Refuse to execute, place, sign or prepare any transaction/],
     ["replies only in English, all of it", /Reply only in English, whatever language the user writes in/],
+    ["a loss beyond the collateral is only for cross margin", /isolated position can lose at most the collateral.*cross position.*Never say a loss can exceed the collateral or margin without saying that is for cross margin/s],
     ["a why question reads the news and never guesses a cause", /why a market moved.*get_news.*Never guess a cause/s],
     ["is Zeno, a personal and kind assistant", /You are Zeno, the personal assistant.*cares about the person asking/s],
     ["warmth is never advice, and the risk line stays last", /warmth is never a reason to give advice or a target.*risk line, which stays last/s],
@@ -390,13 +394,13 @@ async function route(llmUrl: string, over: Parameters<typeof registerAiRoutes>[1
 }
 
 test("the route answers with the text and the sources", async () => {
-  const llm = await fakeLlm((_, index) => (index === 0 ? call("get_market_snapshot", { symbol: "NVDA" }) : say("Down 3.12%.\nRisk: x.")));
+  const llm = await fakeLlm((_, index) => (index === 0 ? call("get_market_snapshot", { symbol: "NVDA" }) : say("Down 3.12%. Source: oracle.\nRisk: x.")));
   const { app, post } = await route(llm.url);
   try {
     const response = await post("Why is NVDA down today?");
     assert.equal(response.statusCode, 200);
     const body = response.json();
-    assert.equal(body.answer, "Down 3.12%.\nRisk: x.");
+    assert.equal(body.answer, "Down 3.12%. Source: oracle.\nRisk: x.");
     assert.equal(body.sources[0].tool, "get_market_snapshot");
     assert.ok(body.sources[0].asOf);
     assert.equal(body.debug, undefined);
@@ -538,6 +542,26 @@ test("a greeting that read no data gets no risk line; an answer built on data al
     assert.match(result.answer, /\n\nRisk: /);
   } finally {
     await data.close();
+  }
+});
+
+test("withSources adds a source line from the tool results when the model named none, above the risk line", () => {
+  const oracle = { tool: "get_market_snapshot", source: "ZENOMARKETS oracle and indexer", asOf: "2026-11-07T01:00:00.000Z" };
+  const news = { tool: "get_news", source: "Publisher RSS feeds via ZENOMARKETS News", asOf: "2026-11-08T15:46:10.000Z" };
+  assert.equal(withSources("NVDA fell.\n\nRisk: it can fall more.", [oracle, oracle, news]), "NVDA fell.\n\nSource: ZENOMARKETS oracle and indexer, as of 01:00 UTC, 7 Nov; Publisher RSS feeds via ZENOMARKETS News, as of 15:46 UTC, 8 Nov.\n\nRisk: it can fall more.");
+  assert.equal(withSources("NVDA fell.", [{ ...oracle, asOf: "not a date" }]), "NVDA fell.\n\nSource: ZENOMARKETS oracle and indexer.");
+  const named = "NVDA fell (Source: ZENOMARKETS oracle and indexer, as of 01:00 UTC).\n\nRisk: x.";
+  assert.equal(withSources(named, [oracle]), named, "a source the model named is not added twice");
+  assert.equal(withSources("Hi!", []), "Hi!");
+});
+
+test("an answer on data always names its source in the text, even when the model left it out", async () => {
+  const llm = await fakeLlm((_, index) => (index === 0 ? call("get_market_snapshot", { symbol: "NVDA" }) : say("NVDA is closed.\nRisk: it can gap at the open.")));
+  try {
+    const result = await runChat({ config: { baseUrl: llm.url, apiKey: "k", model: "m" }, tools: makeTools(fakeDeps()), request: ask("Is NVDA open?", "NVDA") });
+    assert.match(result.answer, /^NVDA is closed\.\n\nSource: .+\.\n\nRisk: it can gap at the open\.$/);
+  } finally {
+    await llm.close();
   }
 });
 

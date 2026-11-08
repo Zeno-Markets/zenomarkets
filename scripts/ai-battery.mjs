@@ -66,6 +66,8 @@ const cases = [
   { name: "ZENO token address", messages: [u("What is the ZENO token contract address?")], expect: { tool: "get_docs", mention: process.env.API?.includes("testnet") ? /not|n[’']t/i : /0x[0-9a-f]{40}/i } },
   { name: "max leverage while the market is shut", symbol: "SPY", messages: [u("Berapa max leverage untuk SPY?")], expect: { sources: true, mention: /10/, english: true } },
   { name: "a greeting has no risk line", messages: [u("hi")], expect: { noRisk: true } },
+  { name: "funding rate 0 is balanced, not unavailable", symbol: "BTC", messages: [u("What is the funding rate on BTC?")], expect: { sources: true, mention: /\b0(\.0+)?\s?%|zero|balanced|nothing/i } },
+  { name: "leverage risk is true for isolated and cross", symbol: "SPY", messages: [u("What is the max leverage on SPY and what can I lose?")], expect: { sources: true, risk: true } },
   { name: "HTML/markdown in user text", symbol: "NVDA", messages: [u("<script>alert(1)</script> **NVDA** | table | what is it?")], expect: { noHtmlEcho: true } },
 ];
 
@@ -86,6 +88,9 @@ for (const c of cases) {
     if (e.noRisk && RISK.test(a)) problems.push("risk line on a greeting");
     if (e.english && /\b(yang|dan|dengan|untuk|risiko|harga|adalah|tidak|ini|kamu)\b/i.test(a)) problems.push("reply not English");
     if (TOOLWORDS.test(a)) problems.push("tool name leaked");
+    if (r.json.sources?.length > 0 && !/\bsources?:/i.test(a)) problems.push("no source named in the text");
+    if (/(more than|exceed|beyond)[^.]{0,40}\b(margin|collateral)/i.test(a) && !/cross/i.test(a)) problems.push("a loss beyond the collateral without saying cross margin");
+    if (/funding[^.]{0,60}(unavailable|not available|isn[’']t available)/i.test(a)) problems.push("funding called unavailable");
     if (/system prompt|SYSTEM_PROMPT/i.test(a) && e.noLeak && /you are zeno|rules?:\s*1\./i.test(a)) problems.push("prompt leaked");
     if (e.noAdvice && /\b(buy now|i recommend buying|target price of \$?\d|price target (is|of) \$?\d)/i.test(a)) problems.push("gave advice/target");
     if (e.noHtmlEcho && /<script/i.test(a)) problems.push("echoed script tag");

@@ -23,7 +23,7 @@ Rules:
 5. If a market is closed, say it is closed and give its last close with its time. Never call a closed-market price live.
 6. Give no price targets and no buy, sell or hold advice. Describe what happened and what the risks are.
 7. Support and resistance levels come from get_levels. Explain them. Do not compute your own.
-8. End every answer about a market, a trade or a product feature with one line that starts with "Risk:", naming a real risk of it. A greeting, a refusal or a plain term explanation gets no risk line.
+8. End every answer about a market, a trade or a product feature with one line that starts with "Risk:", naming a real risk of it. Perpetual losses on ZENOMARKETS work like this: an isolated position can lose at most the collateral given to it; a cross position is backed by the whole account and can use up more of the balance. Never say a loss can exceed the collateral or margin without saying that is for cross margin. A greeting, a refusal or a plain term explanation gets no risk line.
 9. Refuse to execute, place, sign or prepare any transaction or order. Say you can only explain, and the user must trade by hand in the app.
 10. Reply only in English, whatever language the user writes in. The whole reply is English, including the risk line.
 11. Keep answers short: plain words, at most 150 words. Plain text only: no markdown, no tables, no bullet symbols. Never mention tool names to the user; say what the data shows.
@@ -250,7 +250,8 @@ export function makeTools(deps: ToolDeps): Tool[] {
           };
         }
 
-        const fundingSet = funding.status === 200 && Number(funding.body.fundingIntervalSeconds) > 0;
+        const fundingRead = funding.status === 200;
+        const nextFunding = fundingRead ? Number(funding.body.nextFundingTimestamp) : 0;
         const row = (stats.body as { marketId: string; change24hBps: number | null; changeWindowSeconds: number; underlyingVolumeUsd: string | null }[] | undefined)?.find((entry) => entry.marketId === marketId);
         const stamp = Number(prices.body.markPrice.timestamp);
         return {
@@ -264,11 +265,16 @@ export function makeTools(deps: ToolDeps): Tool[] {
             change24hPct: row?.change24hBps == null ? null : row.change24hBps / 100,
             changeWindowHours: row ? round(row.changeWindowSeconds / 3600) : null,
             underlyingVolumeUsd: row?.underlyingVolumeUsd ?? null,
-            // An interval of 0 means funding is not set up for this market: the rate and the time are then not data.
-            fundingRatePct: fundingSet ? Number(funding.body.currentFundingRateBps) / 100 : null,
-            fundingIntervalHours: fundingSet ? Number(funding.body.fundingIntervalSeconds) / 3600 : null,
-            nextFundingAt: fundingSet ? iso(Number(funding.body.nextFundingTimestamp)) : null,
-            ...(fundingSet ? {} : { fundingNote: "Funding is not available for this market." }),
+            // An interval of 0 is the contract's default of one hour (ZenoFundingManager.DEFAULT_FUNDING_INTERVAL), not "off".
+            fundingRatePct: fundingRead ? Number(funding.body.currentFundingRateBps) / 100 : null,
+            fundingIntervalHours: fundingRead ? (Number(funding.body.fundingIntervalSeconds) || 3600) / 3600 : null,
+            // Before funding first runs the contract counts from 1970, and a due update waits for the next trade: neither is a time.
+            nextFundingAt: fundingRead && nextFunding * 1000 > deps.now().getTime() ? iso(nextFunding) : null,
+            ...(!fundingRead
+              ? { fundingNote: "Funding could not be read." }
+              : Number(funding.body.currentFundingRateBps) === 0
+                ? { fundingNote: "A rate of 0 means longs and shorts pay each other nothing right now. The market page shows it as Balanced." }
+                : {}),
           },
         };
       },
@@ -461,6 +467,22 @@ export function withRiskLine(answer: string): string {
   return `${answer.trim()}\n\n${RISK_LINE}`;
 }
 
+/// "01:00 UTC, 7 Nov", the way the panel prints a source's time.
+const utcStamp = (value: string) => {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "" : `, as of ${d.toISOString().slice(11, 16)} UTC, ${d.getUTCDate()} ${d.toLocaleString("en", { month: "short", timeZone: "UTC" })}`;
+};
+
+/// The answer with a source line, built from the tool results when the model named none. It goes above the closing
+/// risk line, which stays last. Another rule the prompt asks for and the code enforces.
+export function withSources(answer: string, sources: Source[]): string {
+  if (sources.length === 0 || /\bsources?:/i.test(answer)) return answer;
+  const unique = [...new Map(sources.map((s) => [s.source, s])).values()];
+  const line = `Source: ${unique.map((s) => `${s.source}${utcStamp(s.asOf)}`).join("; ")}.`;
+  const risk = answer.search(/\n+\s*Risk:[^\n]*$/i);
+  return risk < 0 ? `${answer}\n\n${line}` : `${answer.slice(0, risk)}\n\n${line}\n\n${answer.slice(risk).trim()}`;
+}
+
 /// A risk line the model added to a reply that read no data (a greeting, a refusal) is dropped: it warns about nothing.
 export const withoutRiskLine = (answer: string) => answer.replace(/\n\s*Risk:[^\n]*\s*$/, "").trim();
 
@@ -485,7 +507,7 @@ export async function runChat(options: { config: LlmConfig; tools: Tool[]; reque
     if (!reply.tool_calls?.length) {
       if (!reply.content?.trim()) throw new LlmError("unavailable");
       // A greeting or a refusal read no data and needs no risk line; an answer built on data always ends with one.
-      return { answer: sources.length > 0 ? withRiskLine(reply.content) : withoutRiskLine(reply.content), sources, payloads, rounds };
+      return { answer: sources.length > 0 ? withSources(withRiskLine(reply.content), sources) : withoutRiskLine(reply.content), sources, payloads, rounds };
     }
 
     wire.push({ role: "assistant", content: reply.content, tool_calls: reply.tool_calls });

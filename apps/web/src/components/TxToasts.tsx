@@ -93,8 +93,9 @@ function Toast({ record }: { record: TxRecord }) {
 
 export function TxToasts() {
   const records = useTxStore((state) => state.records);
+  // From sm up they stand left of the Ask Zeno button (right-3 / lg:right-6, 56px wide) instead of on top of it.
   return (
-    <ul aria-live="polite" className="pointer-events-none fixed inset-x-3 top-14 z-50 flex flex-col gap-2 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-auto">
+    <ul aria-live="polite" className="pointer-events-none fixed inset-x-3 top-14 z-50 flex flex-col gap-2 sm:inset-x-auto sm:bottom-4 sm:right-24 sm:top-auto">
       {records.map((record) => (
         <Toast key={record.id} record={record} />
       ))}

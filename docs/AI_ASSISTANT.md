@@ -8,14 +8,15 @@ that can write, sign or send. It needs no wallet. Cost: $0 by construction (free
 - `POST /v1/ai/chat` in `services/api` (`src/routes/ai.ts`, `src/ai.ts`). Body `{ symbol?, messages[] }`. Roles are
   `user` and `assistant` only. History is cut to the last 6 messages of at most 2,000 characters.
 - Answer `{ answer, sources: [{ tool, source, asOf }] }`. The sheet shows each source and its UTC time under the answer.
-- A risk line ends every answer built on tool data (the code adds one if the model forgets); a greeting or a refusal has none.
+- An answer built on tool data names its sources and their times in the text and ends with a risk line (the code adds
+  either if the model forgets); a greeting or a refusal has neither.
 - The model runs a tool loop on the server: at most **4 tool rounds** and **25 seconds** in total. After round 4 it gets
   no tools and must answer.
 - Tools (all read-only, all return `{ source, asOf, data }`):
 
 | Tool | Reads |
 | --- | --- |
-| `get_market_snapshot(symbol)` | `/v1/prices/:symbol`, `/v1/markets/stats`, `/v1/perps/:symbol/funding`. A closed, stale or paused market is reported as not live, with its last close from the Robinhood reference quote |
+| `get_market_snapshot(symbol)` | `/v1/prices/:symbol`, `/v1/markets/stats`, `/v1/perps/:symbol/funding`. A closed, stale or paused market is reported as not live, with its last close from the Robinhood reference quote. A funding interval of 0 is the contract's one-hour default and a 0 rate is "Balanced", as the market page says |
 | `get_candles(symbol, interval, limit)` | `/v1/prices/:symbol/candles`, at most 48 candles |
 | `get_levels(symbol)` | Support and resistance computed in code (`computeLevels`: pivot highs and lows, 3 bars each side, clustered within 0.5%). The model only explains them |
 | `get_news(symbol or category)` | Market News (`/api/news` on the web app, at `NEWS_API_URL`) |
