@@ -240,7 +240,7 @@ test("the system prompt carries every rule", () => {
     ["names the source as the tool gives it", /written exactly as the tool result's "source" field gives it/],
     ["refuses transactions", /Refuse to execute, place, sign or prepare any transaction/],
     ["replies only in English, all of it", /Reply only in English, whatever language the user writes in/],
-    ["a loss beyond the collateral is only for cross margin", /isolated position can lose at most the collateral.*cross position.*Never say a loss can exceed the collateral or margin without saying that is for cross margin/s],
+    ["a loss beyond the collateral is only for cross margin", /Bring up margin only when the answer is about leverage, liquidation or losing money.*isolated position can lose at most the collateral.*cross position.*Never say a loss can exceed the collateral or margin without saying that is for cross margin/s],
     ["a why question reads the news and never guesses a cause", /why a market moved.*get_news.*Never guess a cause/s],
     ["is Zeno, a personal and kind assistant", /You are Zeno, the personal assistant.*cares about the person asking/s],
     ["warmth is never advice, and the risk line stays last", /warmth is never a reason to give advice or a target.*risk line, which stays last/s],
@@ -266,6 +266,10 @@ test("an answer with no risk line gets the English one", () => {
   assert.equal(withRiskLine(done), done);
   const inline = "NVDA fell. Source: Zeno oracle. Risk: it can fall more.";
   assert.equal(withRiskLine(inline), "NVDA fell. Source: Zeno oracle.\n\nRisk: it can fall more.", "an inline risk line is not added twice, and moves to its own line");
+  assert.equal(withRiskLine("Not listed yet.\u00a0Risk: verify it."), "Not listed yet.\n\nRisk: verify it.", "after a no-break space too");
+  const docs = { tool: "get_docs", source: "ZENOMARKETS Docs", asOf: "2026-11-08T12:40:00.000Z" };
+  assert.equal(withSources(withRiskLine("Not listed yet.\u202fRisk: verify it."), [docs]), "Not listed yet.\n\nSource: ZENOMARKETS Docs, as of 12:40 UTC, 8 Nov.\n\nRisk: verify it.", "the source goes above an inline risk line, which stays last");
+  assert.equal(withRiskLine("With 10x the main risk: liquidation."), "With 10x the main risk: liquidation.\n\nRisk: prices can move fast and you can lose the collateral you put in. Ask Zeno can make mistakes. Check important info.", "a lower-case risk inside a sentence is no risk line");
 });
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -568,5 +572,6 @@ test("an answer on data always names its source in the text, even when the model
 test("withoutRiskLine drops only a closing risk line", () => {
   assert.equal(withoutRiskLine("Hi!\nRisk: prices move."), "Hi!");
   assert.equal(withoutRiskLine("Hi!  \nRisk: prices move."), "Hi!");
+  assert.equal(withoutRiskLine("I can only explain markets. Risk: I can't run code."), "I can only explain markets.", "an inline closing risk line on a refusal goes too");
   assert.equal(withoutRiskLine("The main risk: leverage. Ask me more."), "The main risk: leverage. Ask me more.");
 });

@@ -23,7 +23,7 @@ Rules:
 5. If a market is closed, say it is closed and give its last close with its time. Never call a closed-market price live.
 6. Give no price targets and no buy, sell or hold advice. Describe what happened and what the risks are.
 7. Support and resistance levels come from get_levels. Explain them. Do not compute your own.
-8. End every answer about a market, a trade or a product feature with one line that starts with "Risk:", naming a real risk of it. Perpetual losses on ZENOMARKETS work like this: an isolated position can lose at most the collateral given to it; a cross position is backed by the whole account and can use up more of the balance. Never say a loss can exceed the collateral or margin without saying that is for cross margin. A greeting, a refusal or a plain term explanation gets no risk line.
+8. End every answer about a market, a trade or a product feature with one line that starts with "Risk:", naming a real risk of it. Name the risk that fits the question (for funding, that the rate can change; for a product feature, that feature's own risk). Bring up margin only when the answer is about leverage, liquidation or losing money on a position, and then keep it true: an isolated position can lose at most the collateral given to it; a cross position is backed by the whole account and can use up more of the balance. Never say a loss can exceed the collateral or margin without saying that is for cross margin. A greeting, a refusal or a plain term explanation gets no risk line.
 9. Refuse to execute, place, sign or prepare any transaction or order. Say you can only explain, and the user must trade by hand in the app.
 10. Reply only in English, whatever language the user writes in. The whole reply is English, including the risk line.
 11. Keep answers short: plain words, at most 150 words. Plain text only: no markdown, no tables, no bullet symbols. Never mention tool names to the user; say what the data shows.
@@ -462,8 +462,9 @@ export interface ChatResult {
 
 /// The answer with a risk line, added when the model left it out. A rule the prompt asks for and the code enforces.
 export function withRiskLine(answer: string): string {
-  // Any "Risk:" counts: the model sometimes puts it on the same line as its source, so it moves to its own line.
-  if (/\brisk:/i.test(answer)) return answer.trim().replace(/[ \t]+(?=risk:)/gi, "\n\n");
+  // Any "Risk:" counts: the model sometimes puts it on the same line as its source, after a space or a no-break space
+  // (U+00A0, U+202F), so it moves to its own line. A lower-case "the main risk:" inside a sentence is left alone.
+  if (/\bRisk:/.test(answer)) return answer.trim().replace(/[^\S\n]+(?=Risk:)/g, "\n\n");
   return `${answer.trim()}\n\n${RISK_LINE}`;
 }
 
@@ -484,7 +485,7 @@ export function withSources(answer: string, sources: Source[]): string {
 }
 
 /// A risk line the model added to a reply that read no data (a greeting, a refusal) is dropped: it warns about nothing.
-export const withoutRiskLine = (answer: string) => answer.replace(/\n\s*Risk:[^\n]*\s*$/, "").trim();
+export const withoutRiskLine = (answer: string) => answer.replace(/(?:\n|(?<=[.!?])[^\S\n]+)\s*Risk:[^\n]*$/, "").trim();
 
 export async function runChat(options: { config: LlmConfig; tools: Tool[]; request: ChatRequest; timeoutMs?: number; maxRounds?: number }): Promise<ChatResult> {
   const { config, tools, request } = options;

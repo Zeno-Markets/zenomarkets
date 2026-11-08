@@ -196,7 +196,7 @@ export function MarketAnalytics() {
 
   return (
     <Panel
-      className="h-64 shrink-0"
+      className="h-64 shrink-0 max-lg:grow"
       title={<Tabs label="Market sections" tabs={tabList} value={tab} onChange={setTab} />}
     >
       <div role="tabpanel" className="min-h-0 flex-1 overflow-auto">

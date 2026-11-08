@@ -14,7 +14,7 @@ export function OptionPositions() {
   const open = data?.options.filter((position) => position.status === OptionPositionStatus.OPEN) ?? [];
 
   return (
-    <Panel title={`Option positions${open.length ? ` (${open.length})` : ""}`} className="h-64 shrink-0">
+    <Panel title={`Option positions${open.length ? ` (${open.length})` : ""}`} className="h-64 shrink-0 max-lg:grow">
       <div className="min-h-0 flex-1 overflow-auto">
         {mode === "disconnected" ? (
           <p className="p-3 text-muted">Connect a wallet to see your option positions.</p>

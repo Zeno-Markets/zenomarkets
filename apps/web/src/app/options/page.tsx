@@ -4,11 +4,12 @@ import { OptionTradeSheet } from "@/components/OptionTradeSheet";
 
 /// PROJECT_BRIEF.md Sections 25-26, desktop-first: chain and open positions on the left, the
 /// order ticket on the right. The underlying and expiry selectors live in the chain panel. Under
-/// 1024px the ticket opens as a sheet when a series is picked.
+/// 1024px the ticket opens as a sheet when a series is picked. The page is at least as tall as the screen, so the
+/// ticket bar sits on the bottom edge even when the content is short, where the Ask Zeno button expects it.
 export default function OptionsTerminal() {
   return (
-    <div className="flex flex-col lg:h-full">
-      <div className="grid grid-cols-1 gap-1.5 p-1.5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <div className="flex min-h-full flex-col lg:h-full">
+      <div className="grid flex-1 grid-cols-1 gap-1.5 p-1.5 max-lg:grid-rows-[1fr_auto] lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-h-0 flex-col gap-1.5 lg:overflow-y-auto">
           <OptionChain />
           <OptionPositions />

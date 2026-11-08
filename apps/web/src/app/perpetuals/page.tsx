@@ -9,11 +9,12 @@ import { TradeSheet } from "@/components/TradeSheet";
 
 /// PROJECT_BRIEF.md Section 24, desktop-first: market list on the left, chart and positions in
 /// the middle, order panel on the right. Below 1280px the list moves into the price header, and
-/// below 1024px the order panel opens as a sheet from the bar at the bottom.
+/// below 1024px the order panel opens as a sheet from the bar at the bottom. The page is at least as tall as the
+/// screen, so that bar sits on the bottom edge even when the content is short, where the Ask Zeno button expects it.
 export default function PerpetualsTerminal() {
   return (
-    <div className="flex flex-col lg:h-full">
-      <div className="grid grid-cols-1 gap-1.5 p-1.5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[220px_minmax(0,1fr)_340px]">
+    <div className="flex min-h-full flex-col lg:h-full">
+      <div className="grid flex-1 grid-cols-1 gap-1.5 p-1.5 max-lg:grid-rows-[1fr_auto] lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[220px_minmax(0,1fr)_340px]">
         <Suspense fallback={null}>
           <MarketFromUrl />
         </Suspense>
