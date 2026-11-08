@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { failureText, fmtSourceTime, isLimit, suggestions, type AiFailure } from "./ai";
+import { failureText, fmtSourceTime, followUps, isLimit, revealParts, suggestions, type AiFailure } from "./ai";
 
 test("every failure says what happened and what to do, in plain words", () => {
   const all: AiFailure[] = ["rate_limited", "busy", "daily_limit", "timeout", "unavailable", "disabled", "offline"];
@@ -20,11 +20,26 @@ test("rate, busy and daily limit are the limit state", () => {
   assert.deepEqual((["rate_limited", "busy", "daily_limit", "timeout", "offline"] as AiFailure[]).filter(isLimit), ["rate_limited", "busy", "daily_limit"]);
 });
 
-test("the suggestions name the open market", () => {
+test("the suggestions name the open market, and offer product questions without one", () => {
   const list = suggestions("NVDA");
-  assert.equal(list.length, 3);
+  assert.equal(list.length, 4);
   assert.match(list[0]!, /NVDA/);
-  assert.match(list[2]!, /funding rate/i);
+  assert.ok(list.some((question) => /copy trading/i.test(question)));
+  assert.ok(suggestions().every((question) => !/undefined/.test(question)));
+});
+
+test("follow-ups are at most three and never repeat a question already asked", () => {
+  const next = followUps("NVDA", ["latest news on nvda "]);
+  assert.equal(next.length, 3);
+  assert.ok(!next.includes("Latest news on NVDA"));
+  assert.ok(followUps(undefined, []).every((question) => !/undefined/.test(question)));
+});
+
+test("revealParts joins back to the same text, line breaks kept", () => {
+  const text = "NVDA is down 3.12%.\n\nRisk: prices move.";
+  assert.equal(revealParts(text).join(""), text);
+  assert.equal(revealParts(text).length, 7);
+  assert.deepEqual(revealParts(""), []);
 });
 
 test("a source time is UTC, and a bad one says so", () => {

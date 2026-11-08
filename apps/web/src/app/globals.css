@@ -369,6 +369,17 @@ body {
   animation: how-ripple 0.5s ease-out forwards;
 }
 
+/* Ask Zeno: a message, a tile or an answer's sources rise in. `both` keeps a delayed tile hidden until its turn. */
+@keyframes ai-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+.ai-in {
+  animation: ai-in 260ms ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

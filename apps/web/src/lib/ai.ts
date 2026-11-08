@@ -51,7 +51,24 @@ export function failureText(failure: AiFailure, retryAfterSeconds?: number): str
   }
 }
 
-export const suggestions = (symbol: string): string[] => [`Why is ${symbol} moving today?`, `What are the risks of trading ${symbol}?`, "Explain funding rate"];
+/// The empty panel's questions: the open market first, then the product questions the assistant answers from the Docs page.
+export const suggestions = (symbol?: string): string[] =>
+  symbol
+    ? [`Why is ${symbol} moving today?`, `Show support and resistance for ${symbol}`, `What are the risks of trading ${symbol}?`, "How does copy trading work?"]
+    : ["What markets can I trade?", "How does copy trading work?", "Explain funding rate", "What is the ZENO token address?"];
+
+/// Up to three questions to ask next, under the latest answer. A question already asked in this thread is not offered again.
+export function followUps(symbol: string | undefined, asked: readonly string[]): string[] {
+  const pool = symbol
+    ? [`Latest news on ${symbol}`, `Show support and resistance for ${symbol}`, `What is the funding rate on ${symbol}?`, `What are the risks of trading ${symbol}?`, "Explain liquidation price", "How does copy trading work?"]
+    : ["What markets can I trade?", "Explain funding rate", "Explain liquidation price", "How does copy trading work?", "How does lending work?"];
+  const seen = new Set(asked.map((question) => question.trim().toLowerCase()));
+  return pool.filter((question) => !seen.has(question.toLowerCase())).slice(0, 3);
+}
+
+/// The answer split into words and the spaces after them, so it can be revealed a word at a time and still read the same
+/// when joined. Line breaks stay in the space part.
+export const revealParts = (text: string): string[] => text.match(/\S+\s*/g) ?? [];
 
 const FAILURES: readonly string[] = ["rate_limited", "busy", "daily_limit", "timeout", "unavailable", "disabled"];
 
@@ -65,7 +82,7 @@ export function fmtSourceTime(iso: string): string {
 }
 
 /// One question to the assistant. The API keeps only the last six messages, so only those are sent.
-export async function askAi(symbol: string, messages: AiMessage[]): Promise<{ answer: string; sources: AiSource[] }> {
+export async function askAi(symbol: string, messages: AiMessage[], signal?: AbortSignal): Promise<{ answer: string; sources: AiSource[] }> {
   if (!env.apiUrl) throw new AiError("disabled");
   let response: Response;
   try {
@@ -73,8 +90,11 @@ export async function askAi(symbol: string, messages: AiMessage[]): Promise<{ an
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ symbol: symbol || undefined, messages: messages.slice(-6).map(({ role, content }) => ({ role, content })) }),
+      signal,
     });
-  } catch {
+  } catch (error) {
+    // Stopped by the user: not a failure to show.
+    if (signal?.aborted) throw error;
     throw new AiError("offline");
   }
   const body = (await response.json().catch(() => null)) as { answer?: string; sources?: AiSource[]; code?: string; retryAfterSeconds?: number } | null;

@@ -100,20 +100,30 @@ async function states(browser, size) {
   check(`${width}: sheet opens, focus moves into it`, await page.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null));
   check(`${width}: empty state shows three suggested questions`, (await dialog.getByRole("button", { name: /NVDA|funding rate/i }).count()) >= 3);
   check(`${width}: Zeno introduces itself`, (await dialog.getByText("Hello, I'm Zeno").first().isVisible()) && (await dialog.getByText("What can I do for you").first().isVisible()));
-  check(`${width}: disclaimer is on screen`, await dialog.getByText("Zeno can make mistakes, not financial advice").isVisible());
+  check(`${width}: disclaimer is on screen`, await dialog.getByText("Ask Zeno can make mistakes. Check important info.").isVisible());
+  check(`${width}: four suggested questions, one about the product`, (await dialog.getByRole("button", { name: "How does copy trading work?" }).count()) === 1);
   check(`${width}: no horizontal scroll (empty)`, await noSideScroll(page));
   await shot(page, "empty", width);
 
   await dialog.getByRole("button", { name: "Why is NVDA moving today?" }).click();
   await dialog.getByRole("status").waitFor();
-  check(`${width}: loading row while waiting`, await dialog.getByText("Zeno is reading the market").isVisible());
+  check(`${width}: thinking row while waiting`, await dialog.getByText("Thinking…").isVisible());
+  check(`${width}: send becomes Stop while waiting`, await dialog.getByRole("button", { name: "Stop" }).isVisible());
   await shot(page, "loading", width);
   await new Promise((resolve) => setTimeout(resolve, 50));
   release();
-  await dialog.getByText("NVDA is down 3.12%").waitFor();
-  check(`${width}: answer appears whole, with sources and times`, (await dialog.getByText(/ZENOMARKETS oracle and indexer · 14:05 UTC, 14 Oct/).count()) === 1);
+  await dialog.getByText(/ZENOMARKETS oracle and indexer · 14:05 UTC, 14 Oct/).waitFor();
+  const answerText = await dialog.locator("p.leading-relaxed").first().innerText();
+  check(`${width}: answer revealed in full, then its sources and times`, answerText.startsWith("NVDA is down 3.12%") && answerText.includes("Risk:"), answerText.slice(0, 60));
+  check(`${width}: follow-up questions and a copy button under the answer`, (await dialog.getByRole("button", { name: "Copy answer" }).count()) === 1 && (await dialog.getByLabel("Ask next").getByRole("button").count()) === 3);
   check(`${width}: no horizontal scroll (answer)`, await noSideScroll(page));
   await shot(page, "success", width);
+
+  await ask(page, "a question to stop");
+  await dialog.getByRole("button", { name: "Stop" }).click();
+  await dialog.getByRole("button", { name: "Stop" }).waitFor({ state: "detached" });
+  check(`${width}: Stop puts the question back in the field`, (await page.getByLabel("Your question").inputValue()) === "a question to stop" && (await dialog.locator("p.ml-auto", { hasText: "a question to stop" }).count()) === 0);
+  await page.getByLabel("Your question").fill("");
 
   for (const [state, response, expected] of [
     ["error", reply(502, { code: "unavailable", error: "raw provider words" }), /could not answer right now/],
@@ -134,12 +144,19 @@ async function states(browser, size) {
   }
 
   if (width <= 400) {
-    const heights = await page.evaluate(() => [...document.querySelectorAll('[role="dialog"] button:not([tabindex="-1"]), [role="dialog"] input')].filter((el) => el.offsetParent).map((el) => Math.round(el.getBoundingClientRect().height)));
-    check("375: every button and the input in the sheet are at least 44 px high", heights.every((height) => height >= 44), heights.join(","));
+    const heights = await page.evaluate(() => [...document.querySelectorAll('[role="dialog"] button:not([tabindex="-1"]), [role="dialog"] input')].filter((el) => el.offsetParent).map((el) => `${el.getAttribute("aria-label") ?? el.textContent.trim().slice(0, 12)}=${Math.round(el.getBoundingClientRect().height)}`));
+    check("375: every button and the input in the sheet are at least 44 px high", heights.every((entry) => Number(entry.split("=").pop()) >= 44), heights.join(","));
   }
   await page.keyboard.press("Escape");
   await dialog.waitFor({ state: "detached" });
   check(`${width}: Escape closes the sheet and focus returns to the chip`, await chip.evaluate((el) => el === document.activeElement));
+  await page.reload({ waitUntil: "domcontentloaded" });
+  const again = page.getByRole("button", { name: "Ask Zeno" });
+  await again.waitFor({ timeout: 60_000 });
+  await again.evaluate((el) => new Promise((resolve) => { const t = setInterval(() => { if (Object.keys(el).some((key) => key.startsWith("__reactProps"))) { clearInterval(t); resolve(); } }, 50); }));
+  await page.waitForTimeout(500);
+  await again.click();
+  check(`${width}: the conversation survives a reload`, await dialog.getByText("NVDA is down 3.12%").first().waitFor({ timeout: 5_000 }).then(() => true, () => false));
   await context.close();
 }
 
