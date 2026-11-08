@@ -8,6 +8,7 @@ import { storedChainId } from "./network";
 /// here rather than being looked up dynamically.
 const raw = {
   chainId: process.env.NEXT_PUBLIC_CHAIN_ID,
+  askZenoTestnet: process.env.NEXT_PUBLIC_ASK_ZENO_TESTNET,
   rpcUrl: process.env.NEXT_PUBLIC_RPC_URL,
   rpcProxyUrl: process.env.NEXT_PUBLIC_RPC_PROXY_URL,
   explorerUrl: process.env.NEXT_PUBLIC_EXPLORER_URL,
@@ -163,6 +164,9 @@ export const env = {
   release,
   /// Set on a mainnet build, where the roadmap marks this release as the one live now.
   mainnetRelease: buildChainId === ROBINHOOD_TESTNET_CHAIN_ID ? undefined : release,
+  /// Ask Zeno runs on mainnet only, so the free model quota serves mainnet users. NEXT_PUBLIC_ASK_ZENO_TESTNET=true
+  /// shows it on a testnet build on this machine (scripts/ai-local.sh).
+  askZeno: !testnet || raw.askZenoTestnet === "true",
   /// Features that open with a later release (V2.0, V3.0): their pages 404 and their links hide until then.
   lending: isReleased("lending", release),
   strategies: isReleased("strategies", release),

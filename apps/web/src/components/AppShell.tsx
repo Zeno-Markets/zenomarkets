@@ -47,7 +47,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <TriggerAlerts />
       <AlertToasts />
       <OptionExpiryAlerts />
-      {pathname === "/" ? null : <AiAssistant />}
+      {pathname === "/" || !env.askZeno ? null : <AiAssistant />}
     </div>
   );
 }

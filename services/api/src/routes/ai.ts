@@ -1,6 +1,6 @@
 import { fetchReferenceQuotes } from "@zeno/sdk";
 import type { FastifyInstance } from "fastify";
-import { DailyCap, LlmError, makeTools, parseChat, runChat, type LlmConfig, type ToolDeps } from "../ai.js";
+import { DailyCap, LlmError, makeTools, parseChat, runChat, type ChatRequest, type ChatResult, type LlmConfig, type ToolDeps } from "../ai.js";
 import { RateLimiter } from "../rfq.js";
 
 export interface AiRouteOptions {
@@ -100,6 +100,14 @@ export function docsSection(html: string, topic: string): string | undefined {
   return text || undefined;
 }
 
+/// The first question of a conversation repeats (the starter chips): the same question on the same market within
+/// two minutes gets the same answer, and asks arriving together share one model call. Answers carry the time of
+/// their data, so a cached one never claims to be newer. A follow-up depends on its history and is never cached.
+export const ANSWER_CACHE_MS = 2 * 60_000;
+const ANSWER_CACHE_MAX = 200;
+export const answerKey = (request: ChatRequest) =>
+  request.messages.length === 1 ? `${request.symbol ?? ""}|${request.messages[0]!.content.toLowerCase().replace(/\s+/g, " ").replace(/[\s?!.]+$/, "").trim()}` : undefined;
+
 /// `POST /v1/ai/chat`: Ask Zeno. Read-only by construction: the tools only read, and nothing in this file can sign,
 /// send or prepare a transaction. It needs no wallet. Free by construction too: the key comes from a provider account
 /// with no card, a per-IP bucket and a daily cap keep the traffic under that account's quota, and a provider 429 is
@@ -110,6 +118,7 @@ export function registerAiRoutes(app: FastifyInstance, options: AiRouteOptions =
   // ponytail: well below Groq's free 1,000 a day; raise AI_DAILY_CAP only after reading the provider's current limits.
   const dailyCap = options.dailyCap ?? new DailyCap(Number(process.env.AI_DAILY_CAP ?? 300), now);
   const debug = process.env.AI_DEBUG === "true";
+  const answers = new Map<string, { at: number; result: Promise<ChatResult> }>();
 
   app.post<{ Body: unknown }>("/v1/ai/chat", async (request, reply) => {
     const llm = options.llm === undefined ? llmFromEnv() : options.llm;
@@ -121,14 +130,31 @@ export function registerAiRoutes(app: FastifyInstance, options: AiRouteOptions =
     if (!limiter.allow(clientIp(request))) {
       return reply.code(429).header("retry-after", "15").send({ code: "rate_limited", error: "You are asking too fast. Wait a moment and try again.", retryAfterSeconds: 15 });
     }
-    if (!dailyCap.take()) {
-      const wait = dailyCap.retryAfterSeconds();
-      return reply.code(429).header("retry-after", String(wait)).send({ code: "daily_limit", error: "Zeno has reached the limit for today. Try again tomorrow.", retryAfterSeconds: wait });
+    const key = answerKey(parsed);
+    const hit = key === undefined ? undefined : answers.get(key);
+    let pending: Promise<ChatResult>;
+    if (hit && now() - hit.at < ANSWER_CACHE_MS) {
+      pending = hit.result;
+    } else {
+      // Only a model call counts against the daily cap; a cached answer costs the provider nothing.
+      if (!dailyCap.take()) {
+        const wait = dailyCap.retryAfterSeconds();
+        return reply.code(429).header("retry-after", String(wait)).send({ code: "daily_limit", error: "Zeno has reached the limit for today. Try again tomorrow.", retryAfterSeconds: wait });
+      }
+      pending = runChat({ config: llm, tools: makeTools(options.deps ?? depsFor(app)), request: parsed, timeoutMs: options.timeoutMs });
+      if (key !== undefined) {
+        const entry = { at: now(), result: pending };
+        answers.delete(key);
+        answers.set(key, entry);
+        // A failure is not kept: the next ask tries the model again.
+        pending.catch(() => answers.get(key) === entry && answers.delete(key));
+        for (const [old, value] of answers) if (answers.size > ANSWER_CACHE_MAX || now() - value.at >= ANSWER_CACHE_MS) answers.delete(old);
+      }
     }
 
     try {
-      const result = await runChat({ config: llm, tools: makeTools(options.deps ?? depsFor(app)), request: parsed, timeoutMs: options.timeoutMs });
-      request.log.info({ rounds: result.rounds, tools: result.sources.map((source) => source.tool) }, "ai chat");
+      const result = await pending;
+      request.log.info({ rounds: result.rounds, tools: result.sources.map((source) => source.tool), cached: pending === hit?.result }, "ai chat");
       return { answer: result.answer, sources: result.sources, ...(debug ? { debug: { payloads: result.payloads } } : {}) };
     } catch (error) {
       if (!(error instanceof LlmError)) throw error;

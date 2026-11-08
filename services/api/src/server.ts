@@ -1,4 +1,4 @@
-import { isReleased, releaseFor, requireEnv, resolveChainId } from "@zeno/config";
+import { isReleased, releaseFor, requireEnv, resolveChainId, ROBINHOOD_TESTNET_CHAIN_ID } from "@zeno/config";
 import { Zeno } from "@zeno/sdk";
 import websocket from "@fastify/websocket";
 import Fastify from "fastify";
@@ -53,7 +53,9 @@ export function buildServer() {
     if (isReleased("copyTrading", release)) registerCopyRoutes(instance, zeno);
     if (isReleased("lending", release)) registerCreditRoutes(instance, createPublicClient({ transport: http(rpcUrl) }), resolveCreditPair(zeno.addresses, process.env.CREDIT_PAIR_ADDRESS));
     registerTradeRoutes(instance, zeno);
-    registerAiRoutes(instance);
+    // Ask Zeno runs on mainnet only, so the free model quota serves mainnet users (testnet answers "not switched on").
+    // AI_ON_TESTNET=true turns it on for a testnet API on this machine (scripts/ai-local.sh).
+    registerAiRoutes(instance, chainId === ROBINHOOD_TESTNET_CHAIN_ID && process.env.AI_ON_TESTNET !== "true" ? { llm: null } : {});
     if (isReleased("rfq", release)) registerRfqRoutes(instance, zeno);
     registerWebSocket(instance, zeno);
   });

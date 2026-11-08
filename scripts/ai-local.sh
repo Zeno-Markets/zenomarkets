@@ -26,11 +26,11 @@ case "${1:-}" in
     DATABASE_URL=$DB pnpm --filter @zeno/indexer db:migrate >/dev/null
 
     CHAIN_ID=46630 RPC_URL=$TESTNET_RPC DATABASE_URL=$DB API_PORT=4000 \
-      NEWS_API_URL=${NEWS_API_URL:-https://testnet.zenomarkets.tech} AI_DEBUG=true AI_RATE_PER_MINUTE=60 AI_RATE_BURST=20 \
+      NEWS_API_URL=${NEWS_API_URL:-https://testnet.zenomarkets.tech} AI_ON_TESTNET=true AI_DEBUG=true AI_RATE_PER_MINUTE=60 AI_RATE_BURST=20 \
       LLM_API_KEY="${LLM_API_KEY:-}" LLM_BASE_URL="${LLM_BASE_URL:-}" LLM_MODEL="${LLM_MODEL:-}" \
       nohup pnpm --filter @zeno/api start >$RUN/api.log 2>&1 &
     echo $! >$RUN/api.pid
-    NEXT_PUBLIC_CHAIN_ID=46630 NEXT_PUBLIC_RPC_URL=$TESTNET_RPC \
+    NEXT_PUBLIC_CHAIN_ID=46630 NEXT_PUBLIC_RPC_URL=$TESTNET_RPC NEXT_PUBLIC_ASK_ZENO_TESTNET=true \
       NEXT_PUBLIC_API_URL=http://localhost:4000 NEXT_PUBLIC_API_URL_TESTNET=http://localhost:4000 \
       nohup pnpm --filter @zeno/web dev >$RUN/web.log 2>&1 &
     echo $! >$RUN/web.pid

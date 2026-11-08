@@ -189,11 +189,11 @@ executor followers authorise.
 
 ## V3.1: Ask Zeno
 
-Nothing on chain and no `RELEASE` change: the assistant only reads, so it ships on testnet and mainnet together.
-`docs/AI_ASSISTANT.md` has the details.
+Nothing on chain and no `RELEASE` change: the assistant only reads. It runs on **mainnet only** (since 2026-11-08), so
+the free model quota serves mainnet users; testnet shows no button. `docs/AI_ASSISTANT.md` has the details.
 
 1. **Key:** add `LLM_API_KEY=<free-tier Groq key>` and `NEWS_API_URL=https://zenomarkets.tech` to
-   `/opt/zeno/mainnet/zeno.env` (testnet: `NEWS_API_URL=https://testnet.zenomarkets.tech`). Without the key the panel
+   `/opt/zeno/mainnet/zeno.env`. Testnet needs neither: its API answers `disabled` even with a key. Without the key the panel
    says it is not switched on and the rest of the site is unchanged.
 2. **Ship:** push to `testnet` and `mainnet`, run `vps-deploy.sh` for each.
 3. **Check:** the round button shows on every app page (not the landing); a question on NVDA-PERP answers with

@@ -12,6 +12,14 @@ that can write, sign or send. It needs no wallet. Cost: $0 by construction (free
   either if the model forgets); a greeting or a refusal has neither.
 - The model runs a tool loop on the server: at most **4 tool rounds** and **25 seconds** in total. After round 4 it gets
   no tools and must answer.
+- **Mainnet only.** The free model quota is shared by every key of the provider account, so testnet does not spend it:
+  a testnet build shows no button and a testnet API answers `disabled`. `scripts/ai-local.sh` turns it on locally with
+  `AI_ON_TESTNET=true` (API) and `NEXT_PUBLIC_ASK_ZENO_TESTNET=true` (web).
+- **Saving the quota.** The first question of a conversation on the same market is answered from memory for 2 minutes
+  (the starter chips repeat), and asks arriving together share one model call; a follow-up is never cached. A provider
+  "busy" that asks for a few seconds (the tokens-per-minute cap) is waited out inside the 25 s; a long one (the daily
+  quota) reaches the user at once. Tool payloads carry no URLs or repeated text. One question costs about 4,000 to
+  6,000 tokens: the system prompt (~900) and the tool list (~700) go with every round.
 - Tools (all read-only, all return `{ source, asOf, data }`):
 
 | Tool | Reads |
@@ -37,8 +45,8 @@ that can write, sign or send. It needs no wallet. Cost: $0 by construction (free
 | No `LLM_API_KEY` | 503 | `disabled` | The sheet says it is not switched on |
 | Bad body, `system` or `tool` role, unlisted market | 400 | `bad_request` | Costs no daily request |
 | Per address | 429 | `rate_limited` | `RateLimiter`, `AI_RATE_PER_MINUTE` (6) and `AI_RATE_BURST` (4). Key: last `x-forwarded-for` entry |
-| Everyone, per UTC day | 429 | `daily_limit` | `AI_DAILY_CAP`, default 300, in memory (a restart resets it) |
-| Provider 429, 402 or 503 | 503 | `busy` | `Retry-After` from the provider, capped at 1 hour. The provider's text never reaches the client |
+| Everyone, per UTC day | 429 | `daily_limit` | `AI_DAILY_CAP`, default 300, in memory (a restart resets it). A cached answer does not count |
+| Provider 429, 402 or 503 | 503 | `busy` | Waited out first when it fits in the 25 s (twice at most). `Retry-After` from the provider, capped at 1 hour. The provider's text never reaches the client |
 | Over 25 s | 504 | `timeout` | |
 | Anything else from the provider | 502 | `unavailable` | Only the status code is logged. The key is never logged |
 
@@ -50,8 +58,8 @@ that can write, sign or send. It needs no wallet. Cost: $0 by construction (free
    `https://generativelanguage.googleapis.com/v1beta/openai`, `LLM_MODEL` `gemini-2.5-flash`.
    Free-tier limits change; read the provider's page before raising `AI_DAILY_CAP`. A free tier also has a tokens-per-minute
    cap (8,000 on Groq's gpt-oss models; a burst of questions in one minute is answered "busy"); tool results are kept small for that reason.
-2. **VPS**: add to `/opt/zeno/mainnet/zeno.env` (and `/opt/zeno/testnet/zeno.env`) `LLM_API_KEY=<the key>` and
-   `NEWS_API_URL=https://zenomarkets.tech` (testnet: `https://testnet.zenomarkets.tech`). Optional: `LLM_BASE_URL`,
+2. **VPS**: add to `/opt/zeno/mainnet/zeno.env` `LLM_API_KEY=<the key>` and `NEWS_API_URL=https://zenomarkets.tech`
+   (testnet needs no key: it answers `disabled`, and a key there could be removed). Optional: `LLM_BASE_URL`,
    `LLM_MODEL`, `AI_DAILY_CAP`. Never put the key in a file in the repo or in a commit; the web build never sees it
    (`vps-deploy.sh` passes only `NEXT_PUBLIC_*` values to the build).
 3. Restart the API (`systemctl restart zeno-api@mainnet`, or a full `vps-deploy.sh mainnet`).

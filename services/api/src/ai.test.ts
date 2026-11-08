@@ -3,7 +3,7 @@ import { createServer, type Server } from "node:http";
 import { test } from "node:test";
 import Fastify from "fastify";
 import { DailyCap, HISTORY_MESSAGES, LlmError, MAX_ROUNDS, MESSAGE_CHARS, SYSTEM_PROMPT, computeLevels, makeTools, parseChat, runChat, withRiskLine, withSources, withoutRiskLine, type Bar, type Tool, type ToolDeps } from "./ai.js";
-import { docsSection, registerAiRoutes } from "./routes/ai.js";
+import { ANSWER_CACHE_MS, answerKey, docsSection, registerAiRoutes } from "./routes/ai.js";
 import { RateLimiter } from "./rfq.js";
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -417,7 +417,7 @@ test("the route answers with the text and the sources", async () => {
 
 test("a provider 429 becomes 'busy' with a Retry-After, and the provider's words never reach the client", async () => {
   const llm = await fakeLlm(() => ({ status: 429, headers: { "retry-after": "7" }, body: { error: { message: "Rate limit reached for model in organization org_SECRET on tokens per day" } } }));
-  const { app, post } = await route(llm.url);
+  const { app, post } = await route(llm.url, { timeoutMs: 5_000 });
   try {
     const response = await post();
     assert.equal(response.statusCode, 503);
@@ -498,15 +498,16 @@ test("daily cap: requests over the cap are refused until the next UTC day", asyn
   let clock = Date.UTC(2026, 9, 14, 23, 0, 0);
   const { app, post } = await route(llm.url, { dailyCap: new DailyCap(2, () => clock), limiter: new RateLimiter(100, 100, () => clock), now: () => clock });
   try {
-    assert.equal((await post()).statusCode, 200);
-    assert.equal((await post()).statusCode, 200);
-    const over = await post();
+    // Different questions: a repeated first question is answered from memory and would not reach the cap.
+    assert.equal((await post("a")).statusCode, 200);
+    assert.equal((await post("b")).statusCode, 200);
+    const over = await post("c");
     assert.equal(over.statusCode, 429);
     assert.equal(over.json().code, "daily_limit");
     assert.equal(over.headers["retry-after"], "3600");
     assert.equal(llm.seen.length, 2);
     clock += 3_600_000;
-    assert.equal((await post()).statusCode, 200);
+    assert.equal((await post("d")).statusCode, 200);
   } finally {
     await app.close();
     await llm.close();
@@ -574,4 +575,95 @@ test("withoutRiskLine drops only a closing risk line", () => {
   assert.equal(withoutRiskLine("Hi!  \nRisk: prices move."), "Hi!");
   assert.equal(withoutRiskLine("I can only explain markets. Risk: I can't run code."), "I can only explain markets.", "an inline closing risk line on a refusal goes too");
   assert.equal(withoutRiskLine("The main risk: leverage. Ask me more."), "The main risk: leverage. Ask me more.");
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Saving the free quota
+
+test("a short provider busy is waited out inside the time budget; a long one reaches the user at once", async () => {
+  const llm = await fakeLlm((_, index) => (index === 0 ? { status: 429, headers: { "retry-after": "1" }, body: {} } : say("Hello.")));
+  try {
+    const started = Date.now();
+    const result = await runChat({ config: { baseUrl: llm.url, apiKey: "k", model: "m" }, tools: makeTools(fakeDeps()), request: ask("hi"), timeoutMs: 8_000 });
+    assert.equal(result.answer, "Hello.");
+    assert.equal(llm.seen.length, 2);
+    assert.ok(Date.now() - started >= 1_000, "it waited the second the provider asked for");
+  } finally {
+    await llm.close();
+  }
+  const daily = await fakeLlm(() => ({ status: 429, headers: { "retry-after": "240" }, body: {} }));
+  try {
+    const started = Date.now();
+    await assert.rejects(runChat({ config: { baseUrl: daily.url, apiKey: "k", model: "m" }, tools: makeTools(fakeDeps()), request: ask("hi") }), (error: LlmError) => error.kind === "busy" && error.retryAfter === 240);
+    assert.equal(daily.seen.length, 1);
+    assert.ok(Date.now() - started < 1_000);
+  } finally {
+    await daily.close();
+  }
+  const always = await fakeLlm(() => ({ status: 429, headers: { "retry-after": "1" }, body: {} }));
+  try {
+    await assert.rejects(runChat({ config: { baseUrl: always.url, apiKey: "k", model: "m" }, tools: makeTools(fakeDeps()), request: ask("hi"), timeoutMs: 20_000 }), (error: LlmError) => error.kind === "busy");
+    assert.equal(always.seen.length, 3, "two waits at most, then busy");
+  } finally {
+    await always.close();
+  }
+});
+
+test("answerKey: only a first question is cached, by market and words, not by case, spaces or the question mark", () => {
+  assert.equal(answerKey(ask("  Why is BTC moving   today? ", "BTC")), answerKey(ask("why is btc moving today", "BTC")));
+  assert.notEqual(answerKey(ask("Why is BTC moving today?", "BTC")), answerKey(ask("Why is BTC moving today?", "ETH")));
+  assert.equal(answerKey({ symbol: "BTC", messages: [{ role: "user", content: "a" }, { role: "assistant", content: "b" }, { role: "user", content: "c" }] }), undefined);
+});
+
+test("the route answers a repeated first question from memory for two minutes, without a model call or the daily cap", async () => {
+  let clock = 1_000_000;
+  const llm = await fakeLlm(() => say("Hello."));
+  const dailyCap = new DailyCap(2, () => clock);
+  const { app, post } = await route(llm.url, { now: () => clock, dailyCap, limiter: new RateLimiter(100, 100, () => clock) });
+  try {
+    const answers = await Promise.all([post("Why is NVDA down?", "1.1.1.1"), post("why is nvda down", "2.2.2.2")]);
+    assert.deepEqual(answers.map((r) => r.json().answer), ["Hello.", "Hello."]);
+    assert.equal(llm.seen.length, 1, "two asks at once share one model call");
+    clock += ANSWER_CACHE_MS - 1;
+    assert.equal((await post("Why is NVDA down?")).json().answer, "Hello.");
+    assert.equal(llm.seen.length, 1);
+    clock += 2;
+    assert.equal((await post("Why is NVDA down?")).statusCode, 200);
+    assert.equal(llm.seen.length, 2, "after two minutes the model is asked again");
+    assert.equal((await post("Why is NVDA down?")).statusCode, 200, "a cached answer spends no daily request (the cap is 2)");
+  } finally {
+    await app.close();
+    await llm.close();
+  }
+});
+
+test("a failed answer is not cached, and a follow-up always reaches the model", async () => {
+  const llm = await fakeLlm((_, index) => (index === 0 ? { status: 500, body: {} } : say("Hello.")));
+  const { app, post } = await route(llm.url, { limiter: new RateLimiter(100, 100) });
+  try {
+    assert.equal((await post("hi")).statusCode, 502);
+    assert.equal((await post("hi")).json().answer, "Hello.");
+    const followUp = { symbol: "NVDA", messages: [{ role: "user", content: "hi" }, { role: "assistant", content: "Hello." }, { role: "user", content: "hi" }] };
+    await app.inject({ method: "POST", url: "/v1/ai/chat", payload: followUp });
+    await app.inject({ method: "POST", url: "/v1/ai/chat", payload: followUp });
+    assert.equal(llm.seen.length, 4);
+  } finally {
+    await app.close();
+    await llm.close();
+  }
+});
+
+test("tool payloads stay lean: no news URL, minute candle times, no repeated token suffix in the market list", async () => {
+  const tools = makeTools(fakeDeps());
+  const news = JSON.stringify(await tools.find((t) => t.name === "get_news")!.run({ symbol: "NVDA" }));
+  assert.doesNotMatch(news, /example\.com|"url"/);
+  const e18 = (n: number) => (BigInt(n) * 10n ** 18n).toString();
+  const base = fakeDeps();
+  const withBar = makeTools(fakeDeps({ get: async (path) => (path.startsWith("/v1/prices/NVDA/candles") ? { status: 200, body: [{ time: 1_760_437_800, open: e18(180), high: e18(182), low: e18(179), close: e18(181) }] } : base.get(path)) }));
+  const candles = (await withBar.find((t) => t.name === "get_candles")!.run({ symbol: "NVDA" })).data as { candles: { t: string }[] };
+  assert.equal(candles.candles[0]!.t, "2025-10-14T10:30Z");
+  assert.match(candles.candles[0]!.t, /^\d{4}-\d\d-\d\dT\d\d:\d\dZ$/);
+  const list = JSON.stringify(await tools.find((t) => t.name === "list_markets")!.run({}));
+  assert.doesNotMatch(list, /Robinhood Token/);
+  assert.match(list, /"name":"NVIDIA"/);
 });

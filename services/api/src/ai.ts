@@ -301,7 +301,8 @@ export function makeTools(deps: ToolDeps): Tool[] {
             windowHigh: round(Math.max(...bars.map((bar) => bar.high))),
             windowLow: round(Math.min(...bars.map((bar) => bar.low))),
             windowChangePct: round(((last.close - first.open) / first.open) * 100),
-            candles: bars.map((bar) => ({ t: iso(bar.time), o: round(bar.open), h: round(bar.high), l: round(bar.low), c: round(bar.close) })),
+            // "2026-11-03T19:00Z": the seconds and milliseconds of a candle time are always zero and cost tokens on every bar.
+            candles: bars.map((bar) => ({ t: `${iso(bar.time).slice(0, 16)}Z`, o: round(bar.open), h: round(bar.high), l: round(bar.low), c: round(bar.close) })),
           },
         };
       },
@@ -331,7 +332,8 @@ export function makeTools(deps: ToolDeps): Tool[] {
         return {
           source: "Publisher RSS feeds via ZENOMARKETS News",
           asOf: feed.updatedAt,
-          data: { symbol: market?.symbol ?? null, category: category ?? null, headlines: items.map((item) => ({ title: clip(item.title, 160), publisher: item.source, publishedAt: item.publishedAt, url: item.url })) },
+          data: { symbol: market?.symbol ?? null, category: category ?? null, // No url: the answer is plain text and never links, and the tracking URLs were ~40% of this payload's tokens.
+          headlines: items.map((item) => ({ title: clip(item.title, 160), publisher: item.source, publishedAt: item.publishedAt })) },
         };
       },
     },
@@ -368,7 +370,8 @@ export function makeTools(deps: ToolDeps): Tool[] {
         // ponytail: the mainnet list, which is also where testnet takes its groups from; it can list a market a testnet lacks.
         const all = marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID);
         const hits = all.filter((market) => (!group || market.group === group) && (!query || `${market.symbol} ${market.name}`.toLowerCase().includes(query)));
-        const row = (market: (typeof all)[number]) => ({ symbol: market.symbol, name: market.name, group: market.group, tier: market.tier });
+        // " • Robinhood Token" ends most names: dropped, it repeated on every row of a 40-row list.
+        const row = (market: (typeof all)[number]) => ({ symbol: market.symbol, name: market.name.replace(/\s*•\s*Robinhood Token$/, ""), group: market.group, tier: market.tier });
         // A filter that matches nothing (the model guessed "tokenized stock") must not read as "ZENOMARKETS lists nothing".
         if (hits.length === 0 && (group || query)) {
           return { source: "ZENOMARKETS market list", asOf: deps.now().toISOString(), data: { total: 0, note: "No market matched this filter, so the markets below ignore it.", groups: [...new Set(all.map((market) => market.group))], totalListed: all.length, markets: all.slice(0, 40).map(row) } };
@@ -490,7 +493,22 @@ export const withoutRiskLine = (answer: string) => answer.replace(/(?:\n|(?<=[.!
 export async function runChat(options: { config: LlmConfig; tools: Tool[]; request: ChatRequest; timeoutMs?: number; maxRounds?: number }): Promise<ChatResult> {
   const { config, tools, request } = options;
   const maxRounds = options.maxRounds ?? MAX_ROUNDS;
-  const signal = AbortSignal.timeout(options.timeoutMs ?? TIMEOUT_MS);
+  const budgetMs = options.timeoutMs ?? TIMEOUT_MS;
+  const signal = AbortSignal.timeout(budgetMs);
+  const deadline = Date.now() + budgetMs;
+  // A provider at its tokens-per-minute cap asks for a few seconds. Wait inside the time budget (keeping 5 s for the
+  // answer) instead of telling the user "busy"; a long wait (the daily quota) is passed on at once.
+  const completeOrWait = async (messages: WireMessage[], offered: Tool[] | undefined) => {
+    for (let tries = 0; ; tries++) {
+      try {
+        return await complete(config, messages, offered, signal);
+      } catch (error) {
+        const waitMs = error instanceof LlmError && error.kind === "busy" && error.retryAfter !== undefined ? error.retryAfter * 1000 : Infinity;
+        if (tries >= 2 || Date.now() + waitMs + 5_000 > deadline) throw error;
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+      }
+    }
+  };
 
   const wire: WireMessage[] = [{ role: "system", content: SYSTEM_PROMPT }];
   // The open market and the reply language go in as a user message: the system role stays constant. The language is
@@ -504,7 +522,7 @@ export async function runChat(options: { config: LlmConfig; tools: Tool[]; reque
 
   for (; rounds <= maxRounds; rounds++) {
     // After the last allowed round the model gets no tools, so it must answer with what it has.
-    const reply = await complete(config, wire, rounds < maxRounds ? tools : undefined, signal);
+    const reply = await completeOrWait(wire, rounds < maxRounds ? tools : undefined);
     if (!reply.tool_calls?.length) {
       if (!reply.content?.trim()) throw new LlmError("unavailable");
       // A greeting or a refusal read no data and needs no risk line; an answer built on data always ends with one.
